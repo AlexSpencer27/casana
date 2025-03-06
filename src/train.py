@@ -61,13 +61,13 @@ def main() -> None:
     monitor.save_final_plot()
 
     # predictions
-    # signals, targets = generate_batch()
-    # model.eval()
-    # with torch.no_grad():
-    #     predictions = model(signals)
+    signals, targets = generate_batch()
+    model.eval()
+    with torch.no_grad():
+        predictions = model(signals)
 
     # plot predictions
-    # plot_predictions(signals, targets, predictions)
+    plot_predictions(signals, targets, predictions)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
-import matplotlib.pyplot as plt
+import shutil
+import plotly.graph_objects as go
+from pathlib import Path
 import torch
 
 from src.config.config import config
@@ -12,21 +14,63 @@ def plot_predictions(signals: torch.Tensor, targets: torch.Tensor, predictions: 
         targets: True peak positions
         predictions: Predicted peak positions
     """
+    # Create predictions directory if it doesn't exist
+    predictions_dir = Path("figures") / "predictions"
+    shutil.rmtree(predictions_dir, ignore_errors=True)
+    predictions_dir.mkdir(parents=True, exist_ok=True)
+
     for i in range(config.visualization.num_predictions):
-        plt.figure(figsize=(10, 4))
-        plt.plot(signals[i].squeeze().numpy(), label="Original Signal")
+        fig = go.Figure()
         
+        # Plot original signal
+        signal_data = signals[i].squeeze().numpy()
+        x_values = list(range(len(signal_data)))
+        fig.add_trace(go.Scatter(
+            x=x_values,
+            y=signal_data,
+            mode='lines',
+            name='Original Signal',
+            line=dict(color='blue')
+        ))
+        
+        # Get target and predicted positions
         target_positions = targets[i].numpy() * config.signal.length
         predicted_pos = predictions[i].numpy() * config.signal.length
-
-        plt.axvline(x=target_positions[0], color="g", linestyle="-", label="Peak 1")
-        plt.axvline(x=target_positions[1], color="g", linestyle="--", label="Midpoint")
-        plt.axvline(x=target_positions[2], color="g", linestyle="-", label="Peak 2")
-
-        plt.axvline(x=predicted_pos[0], color="r", linestyle="-", label="Predicted Peak 1")
-        plt.axvline(x=predicted_pos[1], color="r", linestyle="--", label="Predicted Midpoint")
-        plt.axvline(x=predicted_pos[2], color="r", linestyle="-", label="Predicted Peak 2")
-
-        plt.title(f"Example {i + 1}")
-        plt.legend()
-        plt.show() 
+        
+        # Add target position lines
+        for pos, style in zip(target_positions, ['-', '--', '-']):
+            fig.add_trace(go.Scatter(
+                x=[pos, pos],
+                y=[min(signal_data), max(signal_data)],
+                mode='lines',
+                name=f'Target {"Midpoint" if style == "--" else "Peak"}',
+                line=dict(color='green', dash='dash' if style == '--' else 'solid')
+            ))
+        
+        # Add predicted position lines
+        for pos, style in zip(predicted_pos, ['-', '--', '-']):
+            fig.add_trace(go.Scatter(
+                x=[pos, pos],
+                y=[min(signal_data), max(signal_data)],
+                mode='lines',
+                name=f'Predicted {"Midpoint" if style == "--" else "Peak"}',
+                line=dict(color='red', dash='dash' if style == '--' else 'solid')
+            ))
+        
+        # Update layout
+        fig.update_layout(
+            title=f'Prediction Example {i + 1}',
+            xaxis_title='Sample',
+            yaxis_title='Amplitude',
+            template='plotly_white',
+            showlegend=True,
+            width=1000,
+            height=400,
+            font=dict(size=14),
+            # Remove gridlines
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=False)
+        )
+        
+        # Save figure
+        fig.write_image(str(predictions_dir / f'prediction_{i+1}.png')) 
