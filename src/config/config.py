@@ -6,10 +6,17 @@ import yaml
 
 
 @dataclass
+class EarlyStoppingConfig:
+    patience: int = 10
+    min_delta: float = 0.0001
+
+
+@dataclass
 class TrainingConfig:
     num_epochs: int = 2000
     batch_size: int = 32
     learning_rate: float = 0.0001
+    early_stopping: EarlyStoppingConfig = EarlyStoppingConfig()
 
 
 @dataclass
@@ -38,8 +45,12 @@ class Config:
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> 'Config':
         """Create a Config instance from a dictionary."""
+        training_dict = config_dict.get('training', {})
+        early_stopping_dict = training_dict.get('early_stopping', {})
+        training_dict['early_stopping'] = EarlyStoppingConfig(**early_stopping_dict)
+        
         return cls(
-            training=TrainingConfig(**config_dict.get('training', {})),
+            training=TrainingConfig(**training_dict),
             signal=SignalConfig(**config_dict.get('signal', {})),
             visualization=VisualizationConfig(**config_dict.get('visualization', {})),
             model=ModelConfig(**config_dict.get('model', {}))

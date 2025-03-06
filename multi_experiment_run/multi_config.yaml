@@ -1,0 +1,39 @@
+base_config:
+  signal:
+    length: 2048
+    sampling_rate: 1024
+  visualization:
+    num_predictions: 10
+  training:
+    batch_size: 32
+    num_epochs: 100
+    learning_rate: 0.0001
+    early_stopping:
+      patience: 10
+      min_delta: 0.0001  
+
+experiments:
+  - name: "simple_model_test"
+    model:
+      name: "simplest_possible"
+
+  - name: "dual_pathway_fft"
+    model:
+      name: "dual_pathway_fft"
+      
+  - name: "multi_scale_conv1d"
+    model:
+      name: "multi_scale_conv1d"
+
+  - name: "attention_dilated_conv1d"
+    model:
+      name: "attention_dilated_conv1d"
+
+  - name: "transformer_conv1d"
+    model:
+      name: "transformer_conv1d"
+
+  - name: "spectral_peak_detector"
+    model:
+      name: "spectral_peak_detector"
+    

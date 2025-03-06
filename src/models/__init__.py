@@ -19,3 +19,8 @@ def get_model(name: str) -> Type[nn.Module]:
 
 # Import models to register them
 from .dual_pathway_fft import DualPathwayFFT 
+from .simplest_possible import SimplestPossible
+from .multi_scale_conv1d import MultiScaleConv1D
+from .attention_dilated_conv1d import AttentionDilatedConv1D
+from .transformer_conv1d import TransformerConv1D
+from .spectral_peak_detector import SpectralPeakDetector
