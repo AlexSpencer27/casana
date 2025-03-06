@@ -65,7 +65,7 @@ class TrainingMonitor:
         
         # Save plot if we hit the save frequency
         if epoch is not None and (epoch + 1) % self.save_frequency == 0:
-            self.save_plot("latest_loss.png")
+            self.save_plot("loss.png")
     
     def save_plot(self, filename: str) -> None:
         """Save the current loss plot to a PNG file.
@@ -121,9 +121,7 @@ class TrainingMonitor:
     
     def save_final_plot(self) -> None:
         """Save the final training loss plot."""
-        # we can delete the latest_loss.png file
-        (self.save_dir / 'latest_loss.png').unlink()
-        self.save_plot("final_loss.png")
+        self.save_plot("loss.png")
     
     @property
     def current_loss(self) -> float:

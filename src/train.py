@@ -7,7 +7,7 @@ sys.path.append(str(PROJECT_ROOT))
 
 import torch.nn as nn
 import torch.optim as optim
-
+from tqdm import tqdm
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
 from src.models import get_model
@@ -35,6 +35,7 @@ def main() -> None:
     optimizer = optim.Adam(model.parameters(), lr=config.training.learning_rate)
 
     # training loop
+    pbar = tqdm(range(config.training.num_epochs), desc="Training")
     for epoch in range(config.training.num_epochs):
         signals, targets = generate_batch()
         optimizer.zero_grad()
@@ -46,8 +47,10 @@ def main() -> None:
         # Update monitor
         monitor.update(loss.item(), epoch)
         
-        if (epoch + 1) % 5 == 0:
-            print(f"Epoch [{epoch + 1}/{config.training.num_epochs}], Loss: {loss.item():.6f}")
+        # Update progress bar
+        pbar.set_postfix(loss=loss.item())
+        pbar.update(1)
+    pbar.close()
             
     # Save final loss plot
     monitor.save_final_plot()
