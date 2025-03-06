@@ -1,18 +1,11 @@
-training:
-  num_epochs: 50
-  batch_size: 32
-  learning_rate: 0.0001
-
 model:
-  name: "dual_pathway_fft"  # Name of the model to use from the registry
-  # options: 
-  # "simplest_possible"
-  # "multi_scale_conv1d"
-  # "dual_pathway_fft"
-
+  name: multi_scale_conv1d
 signal:
   length: 2048
   sampling_rate: 1024
-
+training:
+  batch_size: 32
+  learning_rate: 0.0001
+  num_epochs: 10
 visualization:
   num_predictions: 10

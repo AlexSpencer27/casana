@@ -1,0 +1,31 @@
+base_config:
+  signal:
+    length: 2048
+    sampling_rate: 1024
+  visualization:
+    num_predictions: 10
+  training:
+    batch_size: 32
+
+experiments:
+  - name: "simple_model_test"
+    training:
+      num_epochs: 1000
+      learning_rate: 0.0001
+    model:
+      name: "simplest_possible"
+
+  - name: "dual_pathway_fft"
+    training:
+      num_epochs: 1000
+      learning_rate: 0.0001
+    model:
+      name: "dual_pathway_fft"
+      
+  - name: "multi_scale_conv1d"
+    training:
+      num_epochs: 1000
+      learning_rate: 0.0001
+    model:
+      name: "multi_scale_conv1d"
+    
