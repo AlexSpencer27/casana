@@ -1,5 +1,5 @@
 model:
-  name: attention_dilated_conv1d
+  name: transformer_conv1d
 signal:
   length: 2048
   sampling_rate: 1024
