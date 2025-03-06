@@ -1,42 +1,30 @@
 from pathlib import Path
 import sys
-import os
-import numpy as np
-import json
-from datetime import datetime
-
-# Add project root to path
-def find_project_root() -> Path:
-    """Find the project root by looking for config.yaml"""
-    current = Path(__file__).resolve().parent
-    while current != current.parent:
-        if (current / 'config.yaml').exists():
-            return current
-        current = current.parent
-    raise FileNotFoundError("Could not find project root (config.yaml)")
 
 # Add project root to Python path
-project_root = find_project_root()
-sys.path.insert(0, str(project_root))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(PROJECT_ROOT))
 
-import torch
 import torch.nn as nn
 import torch.optim as optim
 
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
 from src.models import get_model
-from src.utils.plotter import plot_predictions
 from src.utils.experiment_tracker import ExperimentTracker
 from src.utils.training_monitor import TrainingMonitor
 
 
 def main() -> None:
+    # Create project directories
+    best_results_dir = PROJECT_ROOT / 'best_model_results'
+    best_results_dir.mkdir(exist_ok=True, parents=True)
+    
     # Initialize experiment tracker
-    tracker = ExperimentTracker(project_root)
+    tracker = ExperimentTracker(PROJECT_ROOT)
     
     # Initialize training monitor
-    monitor = TrainingMonitor(project_root)
+    monitor = TrainingMonitor(PROJECT_ROOT)
     
     # Get model class from registry and instantiate
     model_class = get_model(config.model.name)
@@ -66,12 +54,11 @@ def main() -> None:
 
     final_loss = loss.item()
 
-    # Evaluate model and get predictions for plotting
-    predictions, targets = tracker.evaluate_model(model, final_loss)
+    # Evaluate model
+    tracker.evaluate_model(model, final_loss)
     
-    # Plot final predictions
-    plot_predictions(project_root, signals, targets, predictions)
     print("\nTraining complete! Check the 'experiments' directory for detailed metrics.")
+    print("Best model results are maintained in the 'best_model_results' directory.")
 
 
 if __name__ == "__main__":

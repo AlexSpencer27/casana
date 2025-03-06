@@ -42,5 +42,6 @@ coverage.xml
 # Poetry
 poetry.lock
 
-# Figures
-figures/
+# Experiments
+experiments/
+best_model_results/

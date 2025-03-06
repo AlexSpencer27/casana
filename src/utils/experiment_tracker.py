@@ -7,6 +7,7 @@ import torch.nn as nn
 import shutil
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
+from src.utils.plotter import plot_predictions
 
 
 class ExperimentTracker:
@@ -18,7 +19,11 @@ class ExperimentTracker:
         Args:
             project_root: Root directory of the project
         """
+        self.project_root = project_root
         self.results_dir = project_root / 'experiments' / config.model.name
+        self.best_results_dir = project_root / 'best_model_results' / config.model.name
+        
+        # Clear and create current experiment directory
         shutil.rmtree(self.results_dir, ignore_errors=True)
         self.results_dir.mkdir(exist_ok=True, parents=True)
         
@@ -43,9 +48,13 @@ class ExperimentTracker:
             eval_loss = self.criterion(predictions, targets).item()
             metrics = self._calculate_metrics(predictions, targets, eval_loss)
             self._print_metrics(metrics)
-            self._save_results(model, final_loss, metrics)
             
-        return predictions, targets
+            # Save all results before updating best
+            self._save_results(model, final_loss, metrics)
+            plot_predictions(self.project_root, signals, targets, predictions)
+            
+            # Now update best results after all files are created
+            self._update_best_results(metrics)
     
     def _calculate_metrics(self, predictions: torch.Tensor, targets: torch.Tensor, eval_loss: float) -> dict:
         """Calculate evaluation metrics.
@@ -119,4 +128,34 @@ class ExperimentTracker:
         with open(self.results_dir / filename, 'w') as f:
             json.dump(experiment_data, f, indent=2)
         
-        print(f"\nExperiment results saved to: {filename}") 
+        print(f"\nExperiment results saved to: {filename}")
+
+    def _update_best_results(self, metrics: dict) -> None:
+        """Update best results if current experiment is better.
+        
+        Args:
+            metrics: Dictionary of computed metrics
+        """
+        # Create best results directory if it doesn't exist
+        self.best_results_dir.mkdir(exist_ok=True, parents=True)
+        
+        best_metrics_path = self.best_results_dir / "metrics.json"
+        current_eval_loss = metrics["eval_loss"]
+        
+        # If no previous best exists or current is better, update best results
+        should_update = True
+        if best_metrics_path.exists():
+            with open(best_metrics_path, 'r') as f:
+                best_metrics = json.load(f)
+                if best_metrics["evaluation_metrics"]["eval_loss"] <= current_eval_loss:
+                    should_update = False
+        
+        if should_update:
+            print("\nNew best model found! Updating best results...")
+            # Clear previous best results
+            shutil.rmtree(self.best_results_dir, ignore_errors=True)
+            self.best_results_dir.mkdir(exist_ok=True, parents=True)
+            
+            # Copy all contents from current results to best results
+            shutil.copytree(self.results_dir, self.best_results_dir, dirs_exist_ok=True)
+            print(f"Best results updated in: {self.best_results_dir}") 
