@@ -1,11 +1,11 @@
 model:
-  name: multi_scale_conv1d
+  name: attention_dilated_conv1d
 signal:
   length: 2048
   sampling_rate: 1024
 training:
   batch_size: 32
   learning_rate: 0.0001
-  num_epochs: 10
+  num_epochs: 100
 visualization:
   num_predictions: 10

@@ -21,3 +21,4 @@ def get_model(name: str) -> Type[nn.Module]:
 from .dual_pathway_fft import DualPathwayFFT 
 from .simplest_possible import SimplestPossible
 from .multi_scale_conv1d import MultiScaleConv1D
+from .attention_dilated_conv1d import AttentionDilatedConv1D
