@@ -6,26 +6,31 @@ base_config:
     num_predictions: 10
   training:
     batch_size: 32
+    num_epochs: 1000
+    learning_rate: 0.0001
 
 experiments:
   - name: "simple_model_test"
-    training:
-      num_epochs: 1000
-      learning_rate: 0.0001
     model:
       name: "simplest_possible"
 
   - name: "dual_pathway_fft"
-    training:
-      num_epochs: 1000
-      learning_rate: 0.0001
     model:
       name: "dual_pathway_fft"
       
   - name: "multi_scale_conv1d"
-    training:
-      num_epochs: 1000
-      learning_rate: 0.0001
     model:
       name: "multi_scale_conv1d"
+
+  - name: "attention_dilated_conv1d"
+    model:
+      name: "attention_dilated_conv1d"
+
+  - name: "transformer_conv1d"
+    model:
+      name: "transformer_conv1d"
+
+  - name: "spectral_peak_detector"
+    model:
+      name: "spectral_peak_detector"
     
