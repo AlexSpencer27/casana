@@ -1,5 +1,5 @@
 training:
-  num_epochs: 10
+  num_epochs: 50
   batch_size: 32
   learning_rate: 0.0001
 
@@ -11,4 +11,4 @@ signal:
   sampling_rate: 1024
 
 visualization:
-  num_predictions: 32 
+  num_predictions: 10

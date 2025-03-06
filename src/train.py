@@ -1,6 +1,9 @@
 from pathlib import Path
 import sys
 import os
+import numpy as np
+import json
+from datetime import datetime
 
 # Add project root to path
 def find_project_root() -> Path:
@@ -24,10 +27,14 @@ from src.config.config import config
 from src.utils.signal_generator import generate_batch
 from src.models import get_model
 from src.utils.plotter import plot_predictions
+from src.utils.experiment_tracker import ExperimentTracker
 from src.utils.training_monitor import TrainingMonitor
 
 
 def main() -> None:
+    # Initialize experiment tracker
+    tracker = ExperimentTracker(project_root)
+    
     # Create figures directory if it doesn't exist
     figures_dir = project_root / 'figures'
     
@@ -53,21 +60,21 @@ def main() -> None:
         
         # Update monitor
         monitor.update(loss.item(), epoch)
-
+        
         if (epoch + 1) % 5 == 0:
-            print(f"Epoch [{epoch + 1}/{config.training.num_epochs}], Loss: {monitor.current_loss:.6f}")
-
+            print(f"Epoch [{epoch + 1}/{config.training.num_epochs}], Loss: {loss.item():.6f}")
+            
     # Save final loss plot
     monitor.save_final_plot()
 
-    # predictions
-    signals, targets = generate_batch()
-    model.eval()
-    with torch.no_grad():
-        predictions = model(signals)
+    final_loss = loss.item()
 
-    # plot predictions
+    # Evaluate model and get predictions for plotting
+    predictions, targets = tracker.evaluate_model(model, final_loss)
+    
+    # Plot final predictions
     plot_predictions(signals, targets, predictions)
+    print("\nTraining complete! Check the 'results' directory for detailed metrics.")
 
 
 if __name__ == "__main__":
