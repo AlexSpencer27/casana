@@ -1,0 +1,11 @@
+training:
+  num_epochs: 2000
+  batch_size: 32
+  learning_rate: 0.0001
+
+signal:
+  length: 2048
+  sampling_rate: 1024
+
+visualization:
+  num_predictions: 32 
