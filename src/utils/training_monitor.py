@@ -121,6 +121,8 @@ class TrainingMonitor:
     
     def save_final_plot(self) -> None:
         """Save the final training loss plot."""
+        # we can delete the latest_loss.png file
+        (self.save_dir / 'latest_loss.png').unlink()
         self.save_plot("final_loss.png")
     
     @property

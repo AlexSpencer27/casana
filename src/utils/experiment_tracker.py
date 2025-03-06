@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 import torch
 import torch.nn as nn
-
+import shutil
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
 
@@ -19,7 +19,11 @@ class ExperimentTracker:
             project_root: Root directory of the project
         """
         self.results_dir = project_root / 'experiments' / config.model.name
+        shutil.rmtree(self.results_dir, ignore_errors=True)
         self.results_dir.mkdir(exist_ok=True, parents=True)
+        
+        # Initialize evaluation criterion
+        self.criterion = nn.MSELoss()
     
     def evaluate_model(self, model: nn.Module, final_loss: float) -> None:
         """Evaluate model on test batch and save results.
@@ -36,18 +40,20 @@ class ExperimentTracker:
         
         with torch.no_grad():
             predictions = model(signals)
-            metrics = self._calculate_metrics(predictions, targets)
+            eval_loss = self.criterion(predictions, targets).item()
+            metrics = self._calculate_metrics(predictions, targets, eval_loss)
             self._print_metrics(metrics)
             self._save_results(model, final_loss, metrics)
             
         return predictions, targets
     
-    def _calculate_metrics(self, predictions: torch.Tensor, targets: torch.Tensor) -> dict:
+    def _calculate_metrics(self, predictions: torch.Tensor, targets: torch.Tensor, eval_loss: float) -> dict:
         """Calculate evaluation metrics.
         
         Args:
             predictions: Model predictions (batch_size, 3)
             targets: Ground truth values (batch_size, 3)
+            eval_loss: MSE loss on evaluation batch
             
         Returns:
             Dictionary of computed metrics
@@ -65,6 +71,7 @@ class ExperimentTracker:
         }
         
         return {
+            "eval_loss": eval_loss,
             "position_errors": position_errors
         }
     
@@ -75,7 +82,8 @@ class ExperimentTracker:
             metrics: Dictionary of metrics to print
         """
         print("\nFinal Metrics:")
-        print("Position Errors:")
+        print(f"Evaluation Loss: {metrics['eval_loss']:.6f}")
+        print("\nPosition Errors:")
         for pos, err in metrics["position_errors"].items():
             print(f"  {pos}: {err:.4f}")
     
