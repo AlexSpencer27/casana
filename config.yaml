@@ -4,7 +4,11 @@ training:
   learning_rate: 0.0001
 
 model:
-  name: "simplest_possible"  # Name of the model to use from the registry
+  name: "multi_scale_conv1d"  # Name of the model to use from the registry
+  # options: 
+  # "dual_pathway_fft"
+  # "simplest_possible"
+  # "multi_scale_conv1d"
 
 signal:
   length: 2048
