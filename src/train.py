@@ -35,11 +35,8 @@ def main() -> None:
     # Initialize experiment tracker
     tracker = ExperimentTracker(project_root)
     
-    # Create figures directory if it doesn't exist
-    figures_dir = project_root / 'figures'
-    
     # Initialize training monitor
-    monitor = TrainingMonitor(figures_dir)
+    monitor = TrainingMonitor(project_root)
     
     # Get model class from registry and instantiate
     model_class = get_model(config.model.name)
@@ -73,8 +70,8 @@ def main() -> None:
     predictions, targets = tracker.evaluate_model(model, final_loss)
     
     # Plot final predictions
-    plot_predictions(signals, targets, predictions)
-    print("\nTraining complete! Check the 'results' directory for detailed metrics.")
+    plot_predictions(project_root, signals, targets, predictions)
+    print("\nTraining complete! Check the 'experiments' directory for detailed metrics.")
 
 
 if __name__ == "__main__":

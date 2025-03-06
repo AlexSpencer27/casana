@@ -6,7 +6,7 @@ import torch
 from src.config.config import config
 
 
-def plot_predictions(signals: torch.Tensor, targets: torch.Tensor, predictions: torch.Tensor) -> None:
+def plot_predictions(project_root: Path, signals: torch.Tensor, targets: torch.Tensor, predictions: torch.Tensor) -> None:
     """Plot the signals with their target and predicted peak positions.
 
     Args:
@@ -15,7 +15,7 @@ def plot_predictions(signals: torch.Tensor, targets: torch.Tensor, predictions: 
         predictions: Predicted peak positions
     """
     # Create predictions directory if it doesn't exist
-    predictions_dir = Path("figures") / "predictions"
+    predictions_dir = project_root / "experiments" / config.model.name / "figures" / "predictions"
     shutil.rmtree(predictions_dir, ignore_errors=True)
     predictions_dir.mkdir(parents=True, exist_ok=True)
 

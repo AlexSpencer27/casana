@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 import plotly.graph_objects as go
 from typing import List, Optional
 import numpy as np
@@ -10,15 +11,17 @@ from src.config.config import config
 class TrainingMonitor:
     """A class to monitor and visualize training progress."""
     
-    def __init__(self, save_dir: Path, save_frequency: int = 5, base_round: int = 10):
+    def __init__(self, project_root: Path, save_frequency: int = 5, base_round: int = 10):
         """Initialize the training monitor.
         
         Args:
-            save_dir: Directory where plots will be saved
+            project_root: Root directory of the project
             save_frequency: How often to save plots (in epochs)
             base_round: Base number to round number of points to for MA window calculation
         """
-        self.save_dir = save_dir
+        self.save_dir = project_root / 'experiments' / config.model.name / 'figures' 
+        shutil.rmtree(self.save_dir, ignore_errors=True)
+        self.save_dir.mkdir(exist_ok=True, parents=True)
         self.save_frequency = save_frequency
         self.base_round = base_round
         self.losses: List[float] = []

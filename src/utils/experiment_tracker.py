@@ -18,8 +18,8 @@ class ExperimentTracker:
         Args:
             project_root: Root directory of the project
         """
-        self.results_dir = project_root / 'results'
-        self.results_dir.mkdir(exist_ok=True)
+        self.results_dir = project_root / 'experiments' / config.model.name
+        self.results_dir.mkdir(exist_ok=True, parents=True)
     
     def evaluate_model(self, model: nn.Module, final_loss: float) -> None:
         """Evaluate model on test batch and save results.
@@ -105,8 +105,7 @@ class ExperimentTracker:
         }
         
         # Generate filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"experiment_{config.model.name}_{timestamp}.json"
+        filename = f"metrics.json"
         
         # Save to JSON file
         with open(self.results_dir / filename, 'w') as f:
