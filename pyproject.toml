@@ -1,18 +1,14 @@
-[project]
+[tool.poetry]
 name = "casana"
 version = "0.1.0"
-description = ""
-authors = [
-    {name = "Your Name",email = "you@example.com"}
-]
-readme = "README.md"
-requires-python = ">=3.10"
-dependencies = [
-    "numpy <2.0.0",
-    "matplotlib (>=3.10.1,<4.0.0)"
-]
+description = "Peak Detection Neural Network Interview Question"
+authors = ["Your Name <your.email@example.com>"]
 
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.24.0"
+matplotlib = "^3.7.0"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
