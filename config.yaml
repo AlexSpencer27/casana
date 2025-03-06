@@ -1,5 +1,5 @@
 model:
-  name: transformer_conv1d
+  name: spectral_peak_detector
 signal:
   length: 2048
   sampling_rate: 1024
