@@ -7,7 +7,7 @@ import torch.nn as nn
 import shutil
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
-from src.utils.plotter import plot_predictions
+from src.utils.plotter import plot_predictions, plot_model_comparison
 
 
 class ExperimentTracker:
@@ -158,4 +158,7 @@ class ExperimentTracker:
             
             # Copy all contents from current results to best results
             shutil.copytree(self.results_dir, self.best_results_dir, dirs_exist_ok=True)
-            print(f"Best results updated in: {self.best_results_dir}") 
+            print(f"Best results updated in: {self.best_results_dir}")
+            
+            # Update model comparison plot
+            plot_model_comparison(self.project_root) 

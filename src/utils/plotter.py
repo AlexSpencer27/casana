@@ -2,6 +2,7 @@ import shutil
 import plotly.graph_objects as go
 from pathlib import Path
 import torch
+import json
 
 from src.config.config import config
 
@@ -73,4 +74,70 @@ def plot_predictions(project_root: Path, signals: torch.Tensor, targets: torch.T
         )
         
         # Save figure
-        fig.write_image(str(predictions_dir / f'prediction_{i+1}.png')) 
+        fig.write_image(str(predictions_dir / f'prediction_{i+1}.png'))
+
+
+def plot_model_comparison(project_root: Path) -> None:
+    """Create a bar plot comparing the performance of all models in best_model_results.
+    
+    Args:
+        project_root: Root directory of the project
+    """
+    best_results_dir = project_root / 'best_model_results'
+    if not best_results_dir.exists():
+        print("No best model results found.")
+        return
+        
+    # Collect data from all models
+    model_data = []
+    
+    for model_dir in best_results_dir.iterdir():
+        if not model_dir.is_dir():
+            continue
+            
+        metrics_file = model_dir / 'metrics.json'
+        if not metrics_file.exists():
+            continue
+            
+        with open(metrics_file, 'r') as f:
+            metrics = json.load(f)
+            
+        model_data.append((
+            metrics['model']['name'],
+            metrics['training']['final_loss'],
+            metrics['evaluation_metrics']['eval_loss']
+        ))
+    
+    if not model_data:
+        print("No model metrics found.")
+        return
+        
+    # Sort by evaluation loss (ascending)
+    model_data.sort(key=lambda x: x[2])
+    
+    # Unzip the sorted data
+    models, train_losses, eval_losses = zip(*model_data)
+        
+    # Create grouped bar plot
+    fig = go.Figure(data=[
+        go.Bar(name='Training Loss', x=models, y=train_losses, marker_color='grey', opacity=0.5),
+        go.Bar(name='Evaluation Loss', x=models, y=eval_losses, marker_color='blue', opacity=0.5)
+    ])
+    
+    # Update layout
+    fig.update_layout(
+        title='Model Performance Comparison (Sorted by Evaluation Loss)',
+        xaxis_title='Model',
+        yaxis_title='Loss',
+        template='plotly_white',
+        barmode='group',
+        width=1000,
+        height=600,
+        font=dict(size=14),
+        # Remove gridlines
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=False)
+    )
+    
+    # Save figure
+    fig.write_image(str(best_results_dir / 'model_comparison.png')) 

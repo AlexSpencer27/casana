@@ -68,6 +68,44 @@ With your virtual environment activated, run:
 python src/train.py
 ```
 
+## Experiment Tracking
+The project includes comprehensive experiment tracking and model performance comparison:
+
+### Directory Structure
+```
+.
+├── experiments/                 # Current experiment results
+│   └── {model_name}/
+│       ├── metrics.json        # Training and evaluation metrics
+│       └── figures/
+│           ├── predictions/    # Prediction visualizations
+│           └── final_loss.png  # Training loss curve
+│
+└── best_model_results/         # Best results for each model
+    ├── {model_name}/          # Best version of each model
+    │   ├── metrics.json
+    │   └── figures/
+    └── model_comparison.png  # Performance comparison across models
+```
+
+### Tracking Features
+- **Experiment Results**: Each training run saves:
+  - Training and evaluation metrics
+  - Loss curves
+  - Prediction visualizations
+  - Model configuration
+
+- **Best Model Tracking**: 
+  - Automatically tracks best version of each model type
+  - Updates when a better model is found (based on evaluation loss)
+  - Preserves all visualizations and metrics for best runs
+
+- **Model Comparison**:
+  - Generates comparative visualization of model performances
+  - Shows training vs evaluation loss for each model
+  - Models sorted by evaluation loss for easy comparison
+  - Updates automatically when new best models are found
+
 ## Implementation Notes
 ### Constraints
 - You may modify the hyper parameters in `config.yaml`
@@ -76,6 +114,3 @@ python src/train.py
 - You may add to the visualization code, but do not remove the existing plots
 - Do not update the signal generation or batch generation code
 - The solution should be implemented as a neural network, not manual feature detection
-
-### Troubleshooting
-If you encounter issues with PyTorch installation, please refer to the official PyTorch installation guide at https://pytorch.org/get-started/locally/ for platform-specific instructions.
