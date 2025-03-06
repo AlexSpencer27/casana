@@ -1,34 +1,36 @@
 from pathlib import Path
 import sys
 
-# Add project root to path
-def find_project_root() -> Path:
-    """Find the project root by looking for config.yaml"""
-    current = Path(__file__).resolve().parent
-    while current != current.parent:
-        if (current / 'config.yaml').exists():
-            return current
-        current = current.parent
-    raise FileNotFoundError("Could not find project root (config.yaml)")
-
 # Add project root to Python path
-project_root = find_project_root()
-sys.path.insert(0, str(project_root))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(PROJECT_ROOT))
 
-import torch
 import torch.nn as nn
 import torch.optim as optim
 
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
-from src.utils.peak_detection import PeakDetectionNet
-from src.utils.plotter import plot_predictions
+from src.models import get_model
+from src.utils.experiment_tracker import ExperimentTracker
+from src.utils.training_monitor import TrainingMonitor
 
 
 def main() -> None:
-    # define model / training parameters
-    model = PeakDetectionNet()
+    # Create project directories
+    best_results_dir = PROJECT_ROOT / 'best_model_results'
+    best_results_dir.mkdir(exist_ok=True, parents=True)
+    
+    # Initialize experiment tracker
+    tracker = ExperimentTracker(PROJECT_ROOT)
+    
+    # Initialize training monitor
+    monitor = TrainingMonitor(PROJECT_ROOT)
+    
+    # Get model class from registry and instantiate
+    model_class = get_model(config.model.name)
+    model = model_class()
     model.train()
+    
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=config.training.learning_rate)
 
@@ -40,18 +42,23 @@ def main() -> None:
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
-
+        
+        # Update monitor
+        monitor.update(loss.item(), epoch)
+        
         if (epoch + 1) % 5 == 0:
             print(f"Epoch [{epoch + 1}/{config.training.num_epochs}], Loss: {loss.item():.6f}")
+            
+    # Save final loss plot
+    monitor.save_final_plot()
 
-    # predictions
-    signals, targets = generate_batch()
-    model.eval()
-    with torch.no_grad():
-        predictions = model(signals)
+    final_loss = loss.item()
 
-    # plot predictions
-    plot_predictions(signals, targets, predictions)
+    # Evaluate model
+    tracker.evaluate_model(model, final_loss)
+    
+    print("\nTraining complete! Check the 'experiments' directory for detailed metrics.")
+    print("Best model results are maintained in the 'best_model_results' directory.")
 
 
 if __name__ == "__main__":
