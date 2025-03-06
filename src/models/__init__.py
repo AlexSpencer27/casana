@@ -19,3 +19,4 @@ def get_model(name: str) -> Type[nn.Module]:
 
 # Import models to register them
 from .dual_pathway_fft import DualPathwayFFT 
+from .simplest_possible import SimplestPossible
