@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+import os
 
 # Add project root to path
 def find_project_root() -> Path:
@@ -23,9 +24,16 @@ from src.config.config import config
 from src.utils.signal_generator import generate_batch
 from src.models import get_model
 from src.utils.plotter import plot_predictions
+from src.utils.training_monitor import TrainingMonitor
 
 
 def main() -> None:
+    # Create figures directory if it doesn't exist
+    figures_dir = project_root / 'figures'
+    
+    # Initialize training monitor
+    monitor = TrainingMonitor(figures_dir)
+    
     # Get model class from registry and instantiate
     model_class = get_model(config.model.name)
     model = model_class()
@@ -42,18 +50,24 @@ def main() -> None:
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
+        
+        # Update monitor
+        monitor.update(loss.item(), epoch)
 
         if (epoch + 1) % 5 == 0:
-            print(f"Epoch [{epoch + 1}/{config.training.num_epochs}], Loss: {loss.item():.6f}")
+            print(f"Epoch [{epoch + 1}/{config.training.num_epochs}], Loss: {monitor.current_loss:.6f}")
+
+    # Save final loss plot
+    monitor.save_final_plot()
 
     # predictions
-    signals, targets = generate_batch()
-    model.eval()
-    with torch.no_grad():
-        predictions = model(signals)
+    # signals, targets = generate_batch()
+    # model.eval()
+    # with torch.no_grad():
+    #     predictions = model(signals)
 
     # plot predictions
-    plot_predictions(signals, targets, predictions)
+    # plot_predictions(signals, targets, predictions)
 
 
 if __name__ == "__main__":
