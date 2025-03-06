@@ -44,21 +44,24 @@ def main() -> None:
         loss.backward()
         optimizer.step()
         
-        # Update monitor
-        monitor.update(loss.item(), epoch)
+        current_loss = loss.item()
         
+        # Update monitor and check early stopping
+        if not monitor.update(current_loss, epoch):
+            print(f"\nEarly stopping triggered after {epoch + 1} epochs!")
+            break
+            
         # Update progress bar
-        pbar.set_postfix(loss=loss.item())
+        pbar.set_postfix(loss=current_loss, best_loss=monitor.best_loss_value, patience=monitor.patience_counter)
         pbar.update(1)
+            
     pbar.close()
             
     # Save final loss plot
     monitor.save_final_plot()
 
-    final_loss = loss.item()
-
-    # Evaluate model
-    tracker.evaluate_model(model, final_loss)
+    # Use best loss for evaluation
+    tracker.evaluate_model(model, monitor.best_loss_value)
     
     print("\nTraining complete! Check the 'experiments' directory for detailed metrics.")
     print("Best model results are maintained in the 'best_model_results' directory.")

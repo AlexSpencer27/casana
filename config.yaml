@@ -5,6 +5,9 @@ signal:
   sampling_rate: 1024
 training:
   batch_size: 32
+  early_stopping:
+    min_delta: 0.0001
+    patience: 10
   learning_rate: 0.0001
   num_epochs: 100
 visualization:

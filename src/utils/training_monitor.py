@@ -26,6 +26,12 @@ class TrainingMonitor:
         self.base_round = base_round
         self.losses: List[float] = []
         
+        # Early stopping variables
+        self.best_loss = float('inf')
+        self.patience_counter = 0
+        self.min_delta = config.training.early_stopping.min_delta
+        self.patience = config.training.early_stopping.patience
+        
         # Create save directory if it doesn't exist
         self.save_dir.mkdir(exist_ok=True)
     
@@ -54,18 +60,31 @@ class TrainingMonitor:
         padding = np.full(ma_window - 1, np.nan)
         return np.concatenate([padding, ma])
     
-    def update(self, loss: float, epoch: Optional[int] = None) -> None:
-        """Update the monitor with a new loss value.
+    def update(self, loss: float, epoch: Optional[int] = None) -> bool:
+        """Update the monitor with a new loss value and check early stopping condition.
         
         Args:
             loss: The loss value to record
             epoch: Current epoch number (optional)
+            
+        Returns:
+            bool: True if training should continue, False if early stopping triggered
         """
         self.losses.append(loss)
+        
+        # Early stopping check
+        if loss < self.best_loss - self.min_delta:
+            self.best_loss = loss
+            self.patience_counter = 0
+        else:
+            self.patience_counter += 1
         
         # Save plot if we hit the save frequency
         if epoch is not None and (epoch + 1) % self.save_frequency == 0:
             self.save_plot("loss.png")
+            
+        # Return True to continue training, False to stop
+        return self.patience_counter < self.patience
     
     def save_plot(self, filename: str) -> None:
         """Save the current loss plot to a PNG file.
@@ -126,4 +145,22 @@ class TrainingMonitor:
     @property
     def current_loss(self) -> float:
         """Get the most recent loss value."""
-        return self.losses[-1] if self.losses else float('inf') 
+        return self.losses[-1] if self.losses else float('inf')
+    
+    @property
+    def should_stop(self) -> bool:
+        """Check if early stopping should be triggered.
+        
+        Returns:
+            bool: True if training should stop, False otherwise
+        """
+        return self.patience_counter >= self.patience
+    
+    @property
+    def best_loss_value(self) -> float:
+        """Get the best loss value seen so far.
+        
+        Returns:
+            float: Best loss value
+        """
+        return self.best_loss 

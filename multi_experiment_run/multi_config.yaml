@@ -6,8 +6,11 @@ base_config:
     num_predictions: 10
   training:
     batch_size: 32
-    num_epochs: 1000
+    num_epochs: 100
     learning_rate: 0.0001
+    early_stopping:
+      patience: 10
+      min_delta: 0.0001  
 
 experiments:
   - name: "simple_model_test"
