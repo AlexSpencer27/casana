@@ -21,14 +21,16 @@ import torch.optim as optim
 
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
-from src.utils.peak_detection import PeakDetectionNet
+from src.models import get_model
 from src.utils.plotter import plot_predictions
 
 
 def main() -> None:
-    # define model / training parameters
-    model = PeakDetectionNet()
+    # Get model class from registry and instantiate
+    model_class = get_model(config.model.name)
+    model = model_class()
     model.train()
+    
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=config.training.learning_rate)
 

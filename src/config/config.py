@@ -24,10 +24,16 @@ class VisualizationConfig:
 
 
 @dataclass
+class ModelConfig:
+    name: str = "dual_pathway_fft"
+
+
+@dataclass
 class Config:
     training: TrainingConfig = TrainingConfig()
     signal: SignalConfig = SignalConfig()
     visualization: VisualizationConfig = VisualizationConfig()
+    model: ModelConfig = ModelConfig()
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> 'Config':
@@ -35,7 +41,8 @@ class Config:
         return cls(
             training=TrainingConfig(**config_dict.get('training', {})),
             signal=SignalConfig(**config_dict.get('signal', {})),
-            visualization=VisualizationConfig(**config_dict.get('visualization', {}))
+            visualization=VisualizationConfig(**config_dict.get('visualization', {})),
+            model=ModelConfig(**config_dict.get('model', {}))
         )
 
 
