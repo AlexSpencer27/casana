@@ -47,8 +47,8 @@ class ExperimentTracker:
         
         with torch.no_grad():
             predictions = model(signals)
-            eval_loss = self.criterion(predictions, targets).item()
-            metrics = self._calculate_metrics(predictions, targets, eval_loss)
+            eval_loss = self.criterion(predictions, targets, signals).item()
+            metrics = self._calculate_metrics(predictions, targets, signals)
             self._print_metrics(metrics)
             
             # Save all results before updating best
@@ -58,13 +58,13 @@ class ExperimentTracker:
             # Now update best results after all files are created
             self._update_best_results(metrics)
     
-    def _calculate_metrics(self, predictions: torch.Tensor, targets: torch.Tensor, eval_loss: float) -> dict:
+    def _calculate_metrics(self, predictions: torch.Tensor, targets: torch.Tensor, signals: torch.Tensor) -> dict:
         """Calculate evaluation metrics.
         
         Args:
             predictions: Model predictions (batch_size, 3)
             targets: Ground truth values (batch_size, 3)
-            eval_loss: MSE loss on evaluation batch
+            signals: Input signals (batch_size, 1, signal_length)
             
         Returns:
             Dictionary of computed metrics
@@ -73,17 +73,31 @@ class ExperimentTracker:
         pred = predictions.detach().cpu().numpy()
         targ = targets.detach().cpu().numpy()
         
-        # Calculate average error for each position
-        avg_errors = np.mean(np.abs(pred - targ), axis=0)
-        position_errors = {
-            "peak1_error": float(avg_errors[0]),
-            "midpoint_error": float(avg_errors[1]),
-            "peak2_error": float(avg_errors[2])
+        # Calculate position errors
+        position_errors = np.mean(np.abs(pred - targ), axis=0)
+        position_metrics = {
+            "peak1_error": float(position_errors[0]),
+            "midpoint_error": float(position_errors[1]),
+            "peak2_error": float(position_errors[2])
         }
+        
+        # Calculate magnitude errors
+        pred_magnitudes = self.criterion.sample_signal_values(signals, predictions).detach().cpu().numpy()
+        target_magnitudes = self.criterion.sample_signal_values(signals, targets).detach().cpu().numpy()
+        magnitude_errors = np.mean(np.abs(pred_magnitudes - target_magnitudes), axis=0)
+        magnitude_metrics = {
+            "peak1_magnitude_error": float(magnitude_errors[0]),
+            "midpoint_magnitude_error": float(magnitude_errors[1]),
+            "peak2_magnitude_error": float(magnitude_errors[2])
+        }
+        
+        # Calculate combined loss
+        eval_loss = self.criterion(predictions, targets, signals).item()
         
         return {
             "eval_loss": eval_loss,
-            "position_errors": position_errors
+            "position_errors": position_metrics,
+            "magnitude_errors": magnitude_metrics
         }
     
     def _print_metrics(self, metrics: dict) -> None:
@@ -94,9 +108,14 @@ class ExperimentTracker:
         """
         print("\nFinal Metrics:")
         print(f"Evaluation Loss: {metrics['eval_loss']:.6f}")
+        
         print("\nPosition Errors:")
         for pos, err in metrics["position_errors"].items():
             print(f"  {pos}: {err:.4f}")
+            
+        print("\nMagnitude Errors:")
+        for mag, err in metrics["magnitude_errors"].items():
+            print(f"  {mag}: {err:.4f}")
     
     def _save_results(self, model: nn.Module, final_loss: float, metrics: dict) -> None:
         """Save experiment results as JSON.

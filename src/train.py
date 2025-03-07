@@ -44,7 +44,7 @@ def main() -> None:
         signals, targets = generate_batch()
         optimizer.zero_grad()
         outputs = model(signals)
-        loss = criterion(outputs, targets)
+        loss = criterion(outputs, targets, signals)
         loss.backward()
         optimizer.step()
         
