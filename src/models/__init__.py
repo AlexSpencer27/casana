@@ -24,3 +24,4 @@ from .multi_scale_conv1d import MultiScaleConv1D
 from .attention_dilated_conv1d import AttentionDilatedConv1D
 from .transformer_conv1d import TransformerConv1D
 from .spectral_peak_detector import SpectralPeakDetector
+from .pinn_peak_detector import PINNPeakDetector

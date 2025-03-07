@@ -1,5 +1,5 @@
 model:
-  name: multi_scale_conv1d
+  name: pinn_peak_detector
 signal:
   length: 2048
   sampling_rate: 1024

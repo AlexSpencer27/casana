@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+import torch
 
 # Add project root to Python path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -17,6 +18,9 @@ from src.utils.training_monitor import TrainingMonitor
 
 
 def main() -> None:
+    # Enable anomaly detection right at the start
+    torch.autograd.set_detect_anomaly(True)
+    
     # Create project directories
     best_results_dir = PROJECT_ROOT / 'best_model_results'
     best_results_dir.mkdir(exist_ok=True, parents=True)
@@ -34,7 +38,7 @@ def main() -> None:
     
     # Get loss function from registry and instantiate
     loss_class = get_loss(config.loss.name)
-    criterion = loss_class()
+    criterion = loss_class()  
     
     optimizer = optim.Adam(model.parameters(), lr=config.training.learning_rate)
 
