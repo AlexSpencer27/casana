@@ -38,6 +38,12 @@ class ModelConfig:
 @dataclass
 class LossConfig:
     name: str = "simple_mse"
+    # Common weights
+    position_weight: float = 1.0
+    magnitude_weight: float = 0.5
+    # Gradient-aware specific weights
+    gradient_weight: float = 0.3
+    second_derivative_weight: float = 0.2
 
 
 @dataclass

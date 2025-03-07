@@ -18,4 +18,5 @@ def get_loss(name: str) -> Type[nn.Module]:
     return LOSS_REGISTRY[name]
 
 # Import loss functions to register them
-from .simple_mse import SimpleMSELoss 
+from .simple_mse import SimpleMSELoss
+from .gradient_aware_loss import GradientAwareLoss 
