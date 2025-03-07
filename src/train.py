@@ -11,6 +11,7 @@ from tqdm import tqdm
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
 from src.models import get_model
+from src.losses import get_loss
 from src.utils.experiment_tracker import ExperimentTracker
 from src.utils.training_monitor import TrainingMonitor
 
@@ -31,7 +32,10 @@ def main() -> None:
     model = model_class()
     model.train()
     
-    criterion = nn.MSELoss()
+    # Get loss function from registry and instantiate
+    loss_class = get_loss(config.loss.name)
+    criterion = loss_class()
+    
     optimizer = optim.Adam(model.parameters(), lr=config.training.learning_rate)
 
     # training loop

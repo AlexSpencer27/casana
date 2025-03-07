@@ -1,5 +1,5 @@
 model:
-  name: spectral_peak_detector
+  name: simplest_possible
 signal:
   length: 2048
   sampling_rate: 1024
@@ -10,5 +10,7 @@ training:
     patience: 10
   learning_rate: 0.0001
   num_epochs: 100
+loss:
+  name: simple_mse
 visualization:
   num_predictions: 10

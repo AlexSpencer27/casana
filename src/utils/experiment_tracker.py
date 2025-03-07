@@ -8,6 +8,7 @@ import shutil
 from src.config.config import config
 from src.utils.signal_generator import generate_batch
 from src.utils.plotter import plot_predictions, plot_model_comparison
+from src.losses import get_loss
 
 
 class ExperimentTracker:
@@ -28,7 +29,8 @@ class ExperimentTracker:
         self.results_dir.mkdir(exist_ok=True, parents=True)
         
         # Initialize evaluation criterion
-        self.criterion = nn.MSELoss()
+        loss_class = get_loss(config.loss.name)
+        self.criterion = loss_class()
     
     def evaluate_model(self, model: nn.Module, final_loss: float) -> None:
         """Evaluate model on test batch and save results.
