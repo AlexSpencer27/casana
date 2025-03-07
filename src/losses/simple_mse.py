@@ -15,8 +15,8 @@ class SimpleMSELoss(BaseLoss):
         """Calculate MSE loss between outputs and targets
         
         Args:
-            outputs: Model outputs
-            targets: Ground truth targets
+            outputs: Model outputs (batch_size, 3) - [peak1, midpoint, peak2]
+            targets: Ground truth targets (batch_size, 3) - [peak1, midpoint, peak2]
             
         Returns:
             MSE loss value

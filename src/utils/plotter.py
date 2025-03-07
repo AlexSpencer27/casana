@@ -12,8 +12,8 @@ def plot_predictions(project_root: Path, signals: torch.Tensor, targets: torch.T
 
     Args:
         signals: Batch of signals to plot
-        targets: True peak positions
-        predictions: Predicted peak positions
+        targets: True peak positions (batch_size, 3)
+        predictions: Predicted peak positions (batch_size, 3)
     """
     # Create predictions directory if it doesn't exist
     predictions_dir = project_root / "experiments" / config.model.name / "figures" / "predictions"
