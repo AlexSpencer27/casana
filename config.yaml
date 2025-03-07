@@ -1,5 +1,5 @@
 model:
-  name: pinn_peak_detector
+  name: simplest_possible
 signal:
   length: 2048
   sampling_rate: 1024
@@ -9,7 +9,7 @@ training:
     min_delta: 0.0001
     patience: 1000
   learning_rate: 0.001
-  num_epochs: 1000000
+  num_epochs: 1000
 loss:
   name: gradient_aware
   # Common weights for both loss functions

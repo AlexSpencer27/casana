@@ -21,6 +21,10 @@ def main() -> None:
     # Enable anomaly detection right at the start
     torch.autograd.set_detect_anomaly(True)
     
+    # Set device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+    
     # Create project directories
     best_results_dir = PROJECT_ROOT / 'best_model_results'
     best_results_dir.mkdir(exist_ok=True, parents=True)
@@ -34,11 +38,12 @@ def main() -> None:
     # Get model class from registry and instantiate
     model_class = get_model(config.model.name)
     model = model_class()
+    model.to(device)
     model.train()
     
     # Get loss function from registry and instantiate
     loss_class = get_loss(config.loss.name)
-    criterion = loss_class()  
+    criterion = loss_class().to(device)  
     
     optimizer = optim.Adam(model.parameters(), lr=config.training.learning_rate)
 
@@ -46,6 +51,7 @@ def main() -> None:
     pbar = tqdm(range(config.training.num_epochs), desc="Training")
     for epoch in range(config.training.num_epochs):
         signals, targets = generate_batch()
+        signals, targets = signals.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = model(signals)
         loss = criterion(outputs, targets, signals)
@@ -68,8 +74,8 @@ def main() -> None:
     # Save final loss plot
     monitor.save_final_plot()
 
-    # Use best loss for evaluation
-    tracker.evaluate_model(model, monitor.best_loss_value)
+    # Pass device to tracker for evaluation
+    tracker.evaluate_model(model, monitor.best_loss_value, device)
     
     print("\nTraining complete! Check the 'experiments' directory for detailed metrics.")
     print("Best model results are maintained in the 'best_model_results' directory.")
