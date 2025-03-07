@@ -1,5 +1,5 @@
 model:
-  name: spectral_peak_detector
+  name: multi_scale_conv1d
 signal:
   length: 2048
   sampling_rate: 1024
@@ -7,8 +7,16 @@ training:
   batch_size: 32
   early_stopping:
     min_delta: 0.0001
-    patience: 10
-  learning_rate: 0.0001
-  num_epochs: 100
+    patience: 1000
+  learning_rate: 0.001
+  num_epochs: 1000000
+loss:
+  name: gradient_aware
+  # Common weights for both loss functions
+  position_weight: 1.0
+  magnitude_weight: 0.5
+  # Gradient-aware specific weights
+  gradient_weight: 0.3
+  second_derivative_weight: 0.2
 visualization:
   num_predictions: 10

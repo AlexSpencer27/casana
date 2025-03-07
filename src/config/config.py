@@ -36,11 +36,23 @@ class ModelConfig:
 
 
 @dataclass
+class LossConfig:
+    name: str = "simple_mse"
+    # Common weights
+    position_weight: float = 1.0
+    magnitude_weight: float = 0.5
+    # Gradient-aware specific weights
+    gradient_weight: float = 0.3
+    second_derivative_weight: float = 0.2
+
+
+@dataclass
 class Config:
     training: TrainingConfig = TrainingConfig()
     signal: SignalConfig = SignalConfig()
     visualization: VisualizationConfig = VisualizationConfig()
     model: ModelConfig = ModelConfig()
+    loss: LossConfig = LossConfig()
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> 'Config':
@@ -53,7 +65,8 @@ class Config:
             training=TrainingConfig(**training_dict),
             signal=SignalConfig(**config_dict.get('signal', {})),
             visualization=VisualizationConfig(**config_dict.get('visualization', {})),
-            model=ModelConfig(**config_dict.get('model', {}))
+            model=ModelConfig(**config_dict.get('model', {})),
+            loss=LossConfig(**config_dict.get('loss', {}))
         )
 
 
