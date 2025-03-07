@@ -126,6 +126,7 @@ class TrainingMonitor:
             title='Training Loss Over Time',
             xaxis_title='Iteration',
             yaxis_title='Loss',
+            yaxis_type='log',
             template='plotly_white',
             showlegend=True,
             width=1000,
