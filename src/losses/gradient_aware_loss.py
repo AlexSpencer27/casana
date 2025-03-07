@@ -16,6 +16,11 @@ class GradientAwareLoss(BaseLoss):
         self.magnitude_weight = config.loss.magnitude_weight
         self.gradient_weight = config.loss.gradient_weight
         self.second_derivative_weight = config.loss.second_derivative_weight
+        
+        # Step size based on quarter of minimum peak width (10/4 = 2.5 samples)
+        # This gives us a good balance between local behavior and numerical stability
+        # Convert to normalized coordinates by dividing by signal length
+        self.step_size = (10.0 / 4.0) / config.signal.length
     
     def sample_signal_values(self, signals: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
         """Sample signal values at given positions using linear interpolation.
@@ -27,18 +32,16 @@ class GradientAwareLoss(BaseLoss):
         Returns:
             Sampled values of shape (batch_size, 3)
         """
-        batch_size, _, signal_length = signals.shape
-        
-        # Convert normalized positions to actual indices
-        indices = positions * (signal_length - 1)
+        # Convert normalized positions to indices
+        indices = positions * (signals.size(-1) - 1)
         
         # Get integer indices for interpolation
         idx_left = torch.floor(indices).long()
         idx_right = torch.ceil(indices).long()
         
         # Ensure indices are within bounds
-        idx_left = torch.clamp(idx_left, 0, signal_length - 1)
-        idx_right = torch.clamp(idx_right, 0, signal_length - 1)
+        idx_left = torch.clamp(idx_left, 0, signals.size(-1) - 1)
+        idx_right = torch.clamp(idx_right, 0, signals.size(-1) - 1)
         
         # Get weights for interpolation
         weights_right = indices - idx_left.float()
@@ -64,23 +67,24 @@ class GradientAwareLoss(BaseLoss):
         Returns:
             Tuple of (first_derivatives, second_derivatives) at the specified positions
         """
-        batch_size, _, signal_length = signals.shape
-        h = 1.0 / signal_length  # Step size for finite differences
-        
         # Sample points for central difference
-        pos_left = torch.clamp(positions - h, 0, 1)
-        pos_right = torch.clamp(positions + h, 0, 1)
+        pos_left = torch.clamp(positions - self.step_size, 0, 1)
+        pos_right = torch.clamp(positions + self.step_size, 0, 1)
         
         # Get values at all points
         values = self.sample_signal_values(signals, positions)
         values_left = self.sample_signal_values(signals, pos_left)
         values_right = self.sample_signal_values(signals, pos_right)
         
+        # Note: signals are already normalized in generate_batch()
+        # signal = (signal - signal.mean()) / signal.std()
+        # So we don't need additional normalization here
+        
         # Compute first derivative using central difference
-        first_derivative = (values_right - values_left) / (2 * h)
+        first_derivative = (values_right - values_left) / (2 * self.step_size)
         
         # Compute second derivative using central difference
-        second_derivative = (values_right - 2 * values + values_left) / (h * h)
+        second_derivative = (values_right - 2 * values + values_left) / (self.step_size * self.step_size)
         
         return first_derivative, second_derivative
     
@@ -108,6 +112,8 @@ class GradientAwareLoss(BaseLoss):
         
         # Second derivative loss - should be negative at peaks
         second_deriv_loss = torch.mean(F.relu(second_deriv))
+        
+        # Note: No need to normalize by signal variance since signals are already normalized
         
         # Combine all losses
         total_loss = (
