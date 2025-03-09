@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
+from src.models.components import PeakOrderingLayer
 
 @register_model("simplest_possible")
 class SimplestPossible(BaseModel):
@@ -16,6 +17,9 @@ class SimplestPossible(BaseModel):
         self.fc2 = nn.Linear(64, 3)      # Output the required 3 values
         self.dropout = nn.Dropout(0.2)    # Light regularization
         
+        # Peak ordering layer
+        self.peak_ordering = PeakOrderingLayer(softness=0.1)
+        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Flatten the input
         x = self.flatten(x)
@@ -25,7 +29,7 @@ class SimplestPossible(BaseModel):
         x = self.dropout(x)
         x = self.fc2(x)
         
-        # Similar to dual pathway, ensure peak1 < midpoint < peak2
-        sorted_x = x + 0.1 * (torch.sort(x, dim=1)[0] - x)
+        # Ensure peak1 < midpoint < peak2 using component
+        x = self.peak_ordering(x)
         
-        return sorted_x
+        return x

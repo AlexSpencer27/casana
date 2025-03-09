@@ -12,6 +12,9 @@ The predictions should be output as a tensor of shape (batch_size, 3) where each
 ├── pyproject.toml       # Poetry dependencies
 └── src/
     ├── config/          # Configuration loading
+    ├── models/          # Neural network models
+    │   ├── components/  # Reusable neural network components
+    │   └── ...          # Model implementations
     ├── utils/           # Utility functions (signal generation, peak detection, plotting)
     └── train.py         # Main training script
 ```
@@ -114,3 +117,21 @@ The project includes comprehensive experiment tracking and model performance com
 - You may add to the visualization code, but do not remove the existing plots
 - Do not update the signal generation or batch generation code
 - The solution should be implemented as a neural network, not manual feature detection
+
+### Component Architecture
+The project now features a component-based architecture for neural network models:
+
+- **Reusable Components**: Common neural network patterns are extracted into reusable components
+- **Modular Design**: Models are built by combining components rather than implementing from scratch
+- **Easier Experimentation**: Swap components or change configurations to quickly try new architectures
+- **Improved Maintainability**: Components are well-documented and independently testable
+
+Available components include:
+- Multi-scale CNN branches
+- Spectral/FFT processing branches
+- Gradient refinement modules
+- Attention mechanisms
+- Skip connection blocks
+- Peak ordering layers
+
+See `src/models/components/README.md` for detailed documentation on available components and usage examples.

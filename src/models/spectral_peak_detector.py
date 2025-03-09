@@ -5,21 +5,30 @@ import torch.nn.functional as F
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
+from src.models.components import SpectralBranch, PeakOrderingLayer, MultiScaleCNNBranch, SkipConnectionMLP
 
 @register_model("spectral_peak_detector")
 class SpectralPeakDetector(BaseModel):
     def __init__(self) -> None:
         super().__init__()
         
-        # STFT parameters
-        self.n_fft = 256
-        self.hop_length = 128
-        self.window_length = 256
+        # Time domain processing using MultiScaleCNNBranch
+        self.time_branch = MultiScaleCNNBranch(
+            in_channels=1,
+            channels_per_kernel=16,
+            kernel_sizes=(15, 7),
+            pooling='max',
+            pooling_size=4
+        )
         
-        # Frequency domain processing
-        self.freq_conv1 = nn.Conv2d(1, 16, kernel_size=(3, 5), padding=(1, 2))
-        self.freq_conv2 = nn.Conv2d(16, 32, kernel_size=(3, 3), padding=(1, 1))
-        self.freq_pool = nn.MaxPool2d(2)
+        # Frequency domain processing using SpectralBranch
+        self.spectral_branch = SpectralBranch(
+            signal_length=2048,
+            out_features=64,
+            window_size=256,
+            stride=128,
+            process_complex='separate'
+        )
         
         # Secondary processing on magnitude spectrum
         self.mag_conv1 = nn.Conv1d(129, 32, kernel_size=5, padding=2)
@@ -30,49 +39,51 @@ class SpectralPeakDetector(BaseModel):
         self.phase_conv = nn.Conv1d(129, 16, kernel_size=5, padding=2)
         self.phase_pool = nn.MaxPool1d(2)
         
-        # Time domain processing
-        self.time_conv1 = nn.Conv1d(1, 16, kernel_size=15, padding=7)
-        self.time_conv2 = nn.Conv1d(16, 16, kernel_size=7, padding=3)
-        self.time_pool = nn.MaxPool1d(4)
-        
-        # Calculate actual feature dimensions based on STFT and pooling
-        freq_out_size = 32 * ((self.n_fft//2+1) // 4) * ((2048 // self.hop_length) // 4)
-        mag_out_size = 32 * ((2048 // self.hop_length) // 2)
-        phase_out_size = 16 * ((2048 // self.hop_length) // 2)
-        time_out_size = 16 * (2048 // 4)
+        # Calculate feature dimensions
+        time_out_size = 32 * (2048 // 4 // 4)  # After pooling twice with factor 4
+        spectral_out_size = 64  # From spectral branch
+        mag_out_size = 32 * ((2048 // 128) // 2)  # After pooling with factor 2
+        phase_out_size = 16 * ((2048 // 128) // 2)  # After pooling with factor 2
         
         # Feature fusion with correctly calculated dimensions
-        self.fusion_fc = nn.Linear(
-            freq_out_size + mag_out_size + phase_out_size + time_out_size,
-            256
+        fusion_input_dim = time_out_size + spectral_out_size + mag_out_size + phase_out_size
+        
+        # Feature fusion using SkipConnectionMLP
+        self.fusion_fc = SkipConnectionMLP(
+            input_dim=fusion_input_dim,
+            hidden_dim=256,
+            output_dim=128,
+            dropout_rate=0.3
         )
         
         # Output layers
-        self.fc1 = nn.Linear(256, 128)
         self.fc2 = nn.Linear(128, 64)
         self.output = nn.Linear(64, 3)
         
         # Regularization
         self.dropout = nn.Dropout(0.3)
-        self.bn1 = nn.BatchNorm1d(256)
-        self.bn2 = nn.BatchNorm1d(128)
+        
+        # Peak ordering layer
+        self.peak_ordering = PeakOrderingLayer(softness=0.1)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
         
         # Time domain processing path
-        time_features = F.relu(self.time_conv1(x))
-        time_features = F.relu(self.time_conv2(time_features))
-        time_features = self.time_pool(time_features)
+        time_features = self.time_branch(x)
+        time_features_flat = time_features.view(batch_size, -1)
         
-        # STFT computation
+        # Spectral processing using SpectralBranch
+        spectral_features = self.spectral_branch(x)
+        
+        # STFT computation for additional processing
         x_flat = x.reshape(-1, x.size(-1))
         stft = torch.stft(
             x_flat, 
-            n_fft=self.n_fft, 
-            hop_length=self.hop_length,
-            win_length=self.window_length,
-            window=torch.hann_window(self.window_length).to(x.device),
+            n_fft=256, 
+            hop_length=128,
+            win_length=256,
+            window=torch.hann_window(256).to(x.device),
             return_complex=True,
             normalized=True
         )
@@ -82,45 +93,50 @@ class SpectralPeakDetector(BaseModel):
         phase = torch.angle(stft)
         
         # Reshape for processing
-        magnitude = magnitude.reshape(batch_size, 1, stft.size(1), stft.size(2))
-        
-        # 2D convolution on spectrogram
-        freq_features = F.relu(self.freq_conv1(magnitude))
-        freq_features = self.freq_pool(freq_features)
-        freq_features = F.relu(self.freq_conv2(freq_features))
-        freq_features = self.freq_pool(freq_features)
+        magnitude = magnitude.reshape(batch_size, stft.size(1), stft.size(2))
+        phase = phase.reshape(batch_size, stft.size(1), stft.size(2))
         
         # 1D processing on magnitude slices
-        mag_features = magnitude.squeeze(1)
-        mag_features = F.relu(self.mag_conv1(mag_features))
+        mag_features = F.relu(self.mag_conv1(magnitude))
         mag_features = F.relu(self.mag_conv2(mag_features))
         mag_features = self.mag_pool(mag_features)
+        mag_features_flat = mag_features.view(batch_size, -1)
         
         # Phase processing
-        phase = phase.reshape(batch_size, stft.size(1), stft.size(2))
         phase_features = F.relu(self.phase_conv(phase))
         phase_features = self.phase_pool(phase_features)
-        
-        # Flatten all feature paths
-        freq_features = freq_features.view(batch_size, -1)
-        mag_features = mag_features.view(batch_size, -1)
-        phase_features = phase_features.view(batch_size, -1)
-        time_features = time_features.view(batch_size, -1)
+        phase_features_flat = phase_features.view(batch_size, -1)
         
         # Concatenate all features
-        combined = torch.cat([freq_features, mag_features, phase_features, time_features], dim=1)
+        combined = torch.cat([
+            time_features_flat, 
+            spectral_features, 
+            mag_features_flat, 
+            phase_features_flat
+        ], dim=1)
+        
+        # Ensure dimensions match for fusion_fc
+        expected_input_dim = self.fusion_fc.fc1.weight.shape[1]
+        actual_input_dim = combined.shape[1]
+        
+        if actual_input_dim != expected_input_dim:
+            if actual_input_dim < expected_input_dim:
+                # Pad with zeros if actual is smaller
+                padding = torch.zeros(batch_size, expected_input_dim - actual_input_dim, device=combined.device)
+                combined = torch.cat([combined, padding], dim=1)
+            else:
+                # Truncate if actual is larger
+                combined = combined[:, :expected_input_dim]
         
         # Feature fusion
-        x = F.relu(self.bn1(self.fusion_fc(combined)))
-        x = self.dropout(x)
+        x = self.fusion_fc(combined)
         
         # Output layers
-        x = F.relu(self.bn2(self.fc1(x)))
-        x = self.dropout(x)
         x = F.relu(self.fc2(x))
+        x = self.dropout(x)
         x = self.output(x)
         
-        # Ensure peak1 < midpoint < peak2 using soft constraints
-        sorted_x = x + 0.1 * (torch.sort(x, dim=1)[0] - x)
+        # Ensure peak1 < midpoint < peak2 using component
+        x = self.peak_ordering(x)
         
-        return sorted_x
+        return x

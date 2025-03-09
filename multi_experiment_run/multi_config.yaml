@@ -6,10 +6,10 @@ base_config:
     num_predictions: 10
   training:
     batch_size: 32
-    num_epochs: 100
+    num_epochs: 20
     learning_rate: 0.0001
     early_stopping:
-      patience: 10
+      patience: 20
       min_delta: 0.0001  
 
 experiments:
@@ -36,4 +36,8 @@ experiments:
   - name: "spectral_peak_detector"
     model:
       name: "spectral_peak_detector"
+
+  - name: "pinn_peak_detector"
+    model:
+      name: "pinn_peak_detector"
     
