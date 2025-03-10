@@ -11,6 +11,11 @@ base_config:
     early_stopping:
       patience: 20
       min_delta: 0.0001  
+  model:
+    gradient_refinement:
+      enabled: true
+      num_iterations: 3
+      step_size: 0.001
 
 experiments:
   - name: "simple_model_test"

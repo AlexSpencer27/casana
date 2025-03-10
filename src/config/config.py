@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import yaml
 
@@ -31,8 +31,16 @@ class VisualizationConfig:
 
 
 @dataclass
+class GradientRefinementConfig:
+    enabled: bool = False
+    num_iterations: int = 3
+    step_size: float = 0.001
+
+
+@dataclass
 class ModelConfig:
     name: str = "dual_pathway_fft"
+    gradient_refinement: GradientRefinementConfig = GradientRefinementConfig()
 
 
 @dataclass
@@ -61,11 +69,15 @@ class Config:
         early_stopping_dict = training_dict.get('early_stopping', {})
         training_dict['early_stopping'] = EarlyStoppingConfig(**early_stopping_dict)
         
+        model_dict = config_dict.get('model', {})
+        gradient_refinement_dict = model_dict.get('gradient_refinement', {})
+        model_dict['gradient_refinement'] = GradientRefinementConfig(**gradient_refinement_dict)
+        
         return cls(
             training=TrainingConfig(**training_dict),
             signal=SignalConfig(**config_dict.get('signal', {})),
             visualization=VisualizationConfig(**config_dict.get('visualization', {})),
-            model=ModelConfig(**config_dict.get('model', {})),
+            model=ModelConfig(**model_dict),
             loss=LossConfig(**config_dict.get('loss', {}))
         )
 

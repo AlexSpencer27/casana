@@ -106,13 +106,6 @@ class PINNPeakDetector(BaseModel):
         # Peak ordering layer
         self.peak_ordering = PeakOrderingLayer(softness=0.1)
         
-        # Gradient refinement module
-        self.gradient_refiner = GradientRefinementModule(
-            signal_length=self.signal_length,
-            num_iterations=3,
-            step_size=0.001
-        )
-        
         # Dropout for regularization
         self.dropout = nn.Dropout(0.2)
         
@@ -154,6 +147,6 @@ class PINNPeakDetector(BaseModel):
         sorted_output = self.peak_ordering(initial_output)
         
         # Apply gradient refinement to find exact zero-gradient points
-        refined_output = self.gradient_refiner(x, sorted_output)
+        refined_output = self.refine_peaks(x, sorted_output)
         
         return refined_output
