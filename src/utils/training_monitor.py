@@ -133,9 +133,9 @@ class TrainingMonitor:
             mode='markers',
             name='Loss',
             marker=dict(
-                size=4,
+                size=2,
                 color="blue",
-                opacity=0.5
+                opacity=0.2
             ),
             showlegend=True
         ))
