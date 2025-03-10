@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 import torch
+import numpy as np
 
 # Add project root to Python path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -10,11 +11,23 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from src.config.config import config
-from src.utils.signal_generator import generate_batch
+from src.utils.signal_generator import generate_batch, generate_signal
 from src.models import get_model
 from src.losses import get_loss
 from src.utils.experiment_tracker import ExperimentTracker
 from src.utils.training_monitor import TrainingMonitor
+
+
+def get_current_noise_amplitude(epoch: int) -> float:
+    """Calculate the current noise amplitude based on curriculum learning schedule."""
+    start_amp = config.signal.complex_noise.start_amplitude
+    end_amp = config.signal.complex_noise.end_amplitude
+    max_epochs = config.signal.complex_noise.epochs_to_max
+    
+    # Linear interpolation from start to end amplitude
+    progress = min(epoch / max_epochs, 1.0)
+    current_amplitude = start_amp + (end_amp - start_amp) * progress
+    return current_amplitude
 
 
 def main() -> None:
@@ -47,6 +60,16 @@ def main() -> None:
     
     optimizer = optim.Adam(model.parameters(), lr=config.training.learning_rate)
 
+    # Monkey patch the generate_signal function to use curriculum learning
+    original_generate_signal = generate_signal
+    def curriculum_generate_signal(*args, **kwargs):
+        # Add current noise amplitude to signal generation
+        kwargs['noise_scale'] = get_current_noise_amplitude(epoch)
+        return original_generate_signal(*args, **kwargs)
+    
+    import src.utils.signal_generator
+    src.utils.signal_generator.generate_signal = curriculum_generate_signal
+
     # training loop
     pbar = tqdm(range(config.training.num_epochs), desc="Training")
     for epoch in range(config.training.num_epochs):
@@ -65,11 +88,21 @@ def main() -> None:
             print(f"\nEarly stopping triggered after {epoch + 1} epochs!")
             break
             
-        # Update progress bar
-        pbar.set_postfix(loss=current_loss, best_loss=monitor.best_loss_value, patience=monitor.patience_counter)
+        # Update progress bar with current noise amplitude
+        current_amplitude = get_current_noise_amplitude(epoch)
+        noise_status = "off" if current_amplitude < config.signal.complex_noise.min_amplitude else f"{current_amplitude:.3f}"
+        pbar.set_postfix(
+            loss=current_loss,
+            best_loss=monitor.best_loss_value,
+            patience=monitor.patience_counter,
+            noise=noise_status
+        )
         pbar.update(1)
             
     pbar.close()
+    
+    # Restore original generate_signal function
+    src.utils.signal_generator.generate_signal = original_generate_signal
             
     # Save final loss plot
     monitor.save_final_plot()

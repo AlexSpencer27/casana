@@ -20,10 +20,18 @@ class TrainingConfig:
 
 
 @dataclass
+class ComplexNoiseConfig:
+    start_amplitude: float = 0.0
+    end_amplitude: float = 0.2
+    min_amplitude: float = 0.05
+    epochs_to_max: int = 10000
+
+
+@dataclass
 class SignalConfig:
     length: int = 2048
     sampling_rate: int = 1024
-    add_complex_signal: bool = True
+    complex_noise: ComplexNoiseConfig = ComplexNoiseConfig()
 
 
 @dataclass
@@ -82,9 +90,13 @@ class Config:
         gradient_refinement_dict = model_dict.get('gradient_refinement', {})
         model_dict['gradient_refinement'] = GradientRefinementConfig(**gradient_refinement_dict)
         
+        signal_dict = config_dict.get('signal', {})
+        complex_noise_dict = signal_dict.get('complex_noise', {})
+        signal_dict['complex_noise'] = ComplexNoiseConfig(**complex_noise_dict)
+        
         return cls(
             training=TrainingConfig(**training_dict),
-            signal=SignalConfig(**config_dict.get('signal', {})),
+            signal=SignalConfig(**signal_dict),
             visualization=VisualizationConfig(**config_dict.get('visualization', {})),
             model=ModelConfig(**model_dict),
             loss=LossConfig(**config_dict.get('loss', {}))
