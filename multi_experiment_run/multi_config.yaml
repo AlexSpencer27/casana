@@ -4,18 +4,25 @@ base_config:
     sampling_rate: 512
   visualization:
     num_predictions: 10
+    plot_frequency: 500
   training:
     batch_size: 32
-    num_epochs: 20
+    num_epochs: 1000000
     learning_rate: 0.0001
     early_stopping:
-      patience: 20
+      patience: 1000
       min_delta: 0.0001  
   model:
     gradient_refinement:
       enabled: true
       base_step_size: 0.001
       max_iterations: 10
+  loss:
+    name: gradient_aware
+    position_weight: 100.0
+    magnitude_weight: 1.0
+    gradient_weight: 0.00000001
+    second_derivative_weight: 0.0001
 
 experiments:
   - name: "simple_model_test"

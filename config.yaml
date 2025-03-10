@@ -17,10 +17,10 @@ training:
   num_epochs: 10000
 loss:
   name: gradient_aware
-  position_weight: 50.0
-  magnitude_weight: 0.1
+  position_weight: 100.0
+  magnitude_weight: 1.0
   gradient_weight: 0.00000001
-  second_derivative_weight: 0.00001
+  second_derivative_weight: 0.0001
 visualization:
   num_predictions: 10
   plot_frequency: 500  # Set to null to only plot final loss figure, or an integer for periodic plotting
