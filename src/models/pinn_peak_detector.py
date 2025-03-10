@@ -141,13 +141,10 @@ class PINNPeakDetector(BaseModel):
         fused = self.fusion(combined_features)
         
         # Initial output layer
-        initial_output = self.output(fused)
+        x = self.output(fused)
         
         # Apply gradient refinement to find exact zero-gradient points
-        refined_output = self.refine_peaks(x, initial_output)
-        
-        x = self.dropout(refined_output)
-        x = self.output(x)
+        x = self.refine_peaks(x, x)
         
         # Apply bounded peak output layer
         x = self.peak_output(x)

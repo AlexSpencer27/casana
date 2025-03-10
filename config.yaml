@@ -9,11 +9,11 @@ model:
     base_step_size: 0.001
     enabled: true
     max_iterations: 10
-  name: simplest_possible
+  name: pinn_peak_detector
 signal:
   add_complex_signal: true
-  length: 1024
-  sampling_rate: 512
+  length: 2048
+  sampling_rate: 1024
 training:
   batch_size: 32
   early_stopping:
