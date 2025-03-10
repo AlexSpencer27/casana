@@ -23,6 +23,7 @@ class PeakOrderingLayer(nn.Module):
         Returns:
             Tensor of shape [batch_size, 3] with constrained positions in [0,1]
         """
+        return x
         # Hard clamp to [0,1] range
         x = torch.clamp(x, 0.0, 1.0)
         

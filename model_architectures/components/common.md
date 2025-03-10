@@ -37,7 +37,6 @@ The Common components module provides essential utilities and shared components 
 
 ### Module Parameters
 #### PeakOrderingLayer
-- Softness: 0.1 (default)
 - Minimum separation: 0.1 (default)
 - Input shape: [batch_size, 3]
 - Output shape: [batch_size, 3]

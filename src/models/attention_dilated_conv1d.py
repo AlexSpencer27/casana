@@ -55,7 +55,7 @@ class AttentionDilatedConv1D(BaseModel):
         self.output = nn.Linear(64, 3)
         
         # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer(softness=0.1)
+        self.peak_ordering = PeakOrderingLayer()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)

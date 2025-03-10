@@ -104,7 +104,7 @@ class PINNPeakDetector(BaseModel):
         self.output_layer = nn.Linear(64, 3)
         
         # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer(softness=0.1)
+        self.peak_ordering = PeakOrderingLayer()
         
         # Dropout for regularization
         self.dropout = nn.Dropout(0.2)

@@ -26,7 +26,6 @@ The Simplest Possible model serves as a baseline architecture for peak detection
 
 4. **Peak Ordering**
    - Ensures physical constraints
-   - Softness parameter: 0.1
    - Maintains peak1 < midpoint < peak2
 
 ### Data Flow
@@ -43,7 +42,6 @@ The Simplest Possible model serves as a baseline architecture for peak detection
 - Output: 3 values (peak1, midpoint, peak2)
 - Hidden dimension: 64
 - Dropout rate: 0.2
-- Peak ordering softness: 0.1
 
 ### Key Features
 - Minimal architecture

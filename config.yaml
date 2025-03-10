@@ -3,7 +3,7 @@ model:
     base_step_size: 0.001
     enabled: false
     max_iterations: 10
-  name: simplest_possible
+  name: multi_scale_conv1d
 signal:
   length: 1024
   sampling_rate: 512
@@ -13,14 +13,14 @@ training:
   early_stopping:
     min_delta: 0.0001
     patience: 2000
-  learning_rate: 0.001
-  num_epochs: 2000
+  learning_rate: 0.0001
+  num_epochs: 200000
 loss:
-  name: gradient_aware
-  position_weight: 1.0
-  magnitude_weight: 1.0
-  gradient_weight: 2.0
-  second_derivative_weight: 1.0
+  name: simple_mse
+  position_weight: 100.0
+  magnitude_weight: 100.0
+  gradient_weight: 0.001
+  second_derivative_weight: 0.001
 visualization:
   num_predictions: 10
-  plot_frequency: null  # Set to null to only plot final loss figure, or an integer for periodic plotting
+  plot_frequency: 100  # Set to null to only plot final loss figure, or an integer for periodic plotting

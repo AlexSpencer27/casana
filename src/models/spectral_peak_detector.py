@@ -62,7 +62,7 @@ class SpectralPeakDetector(BaseModel):
         self.dropout = nn.Dropout(0.3)
         
         # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer(softness=0.1)
+        self.peak_ordering = PeakOrderingLayer()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)

@@ -72,7 +72,7 @@ gradient_refiner = GradientRefinementModule(
 ```python
 from src.models.components import PeakOrderingLayer
 
-peak_ordering = PeakOrderingLayer(softness=0.1)
+peak_ordering = PeakOrderingLayer()
 ```
 
 ### Skip Connection MLP
