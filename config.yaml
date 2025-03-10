@@ -1,8 +1,8 @@
 model:
   name: pinn_peak_detector
 signal:
-  length: 1024
-  sampling_rate: 1024
+  length: 512
+  sampling_rate: 512
 training:
   batch_size: 32
   early_stopping:

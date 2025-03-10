@@ -80,9 +80,7 @@ class PINNPeakDetector(BaseModel):
         # Spectral analysis using component
         self.spectral_module = SpectralBranch(
             signal_length=self.signal_length,
-            out_features=64,
-            window_size=256,
-            stride=128
+            out_features=64
         )
         
         # Attention for signal weighting based on expected peak regions

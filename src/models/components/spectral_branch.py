@@ -11,50 +11,47 @@ class SpectralBranch(nn.Module):
         self,
         signal_length=2048,
         out_features=64,
-        fft_mode='rfft',
-        window_size=256,
-        stride=128,
+        window_size=None,
+        stride=None,
         use_window=True,
         process_complex='magnitude'
     ):
         """
-        Spectral branch for processing signals in frequency domain using FFT.
+        Spectral branch for processing signals in frequency domain using Real FFT.
         
         Args:
             signal_length: Original signal length (default: 2048)
             out_features: Output feature dimension (default: 64)
-            fft_mode: Type of FFT to use ('rfft' or 'fft') (default: 'rfft')
-            window_size: Size of sliding window for windowed FFT (default: 256)
-            stride: Stride for windowed FFT (default: 128)
+            window_size: Size of sliding window for windowed FFT (default: signal_length // 4)
+            stride: Stride for windowed FFT (default: window_size // 2)
             use_window: Whether to apply Hann window (default: True)
             process_complex: How to process complex values ('magnitude', 'separate', 'complex') (default: 'magnitude')
         """
         super().__init__()
         
         self.signal_length = signal_length
-        self.fft_mode = fft_mode
-        self.window_size = window_size
-        self.stride = stride
+        
+        # Calculate adaptive window_size and stride if not provided
+        if window_size is None:
+            self.window_size = signal_length // 4
+        else:
+            self.window_size = window_size
+        
+        if stride is None:
+            self.stride = self.window_size // 2
+        else:
+            self.stride = stride
+        
         self.use_window = use_window
         self.process_complex = process_complex
         
-        # Determine input size for the FC network based on FFT mode and window size
+        # Determine input size for the FC network based on window size
         if self.window_size < self.signal_length:
-            # Using windowed FFT
-            if fft_mode == 'rfft':
-                # Real FFT has window_size//2 + 1 output size
-                fft_output_size = window_size // 2 + 1
-            else:
-                # Full FFT has window_size output size
-                fft_output_size = window_size
+            # Using windowed FFT - Real FFT has window_size//2 + 1 output size
+            fft_output_size = self.window_size // 2 + 1
         else:
-            # Using full signal FFT
-            if fft_mode == 'rfft':
-                # Real FFT has signal_length//2 + 1 output size
-                fft_output_size = signal_length // 2 + 1
-            else:
-                # Full FFT has signal_length output size
-                fft_output_size = signal_length
+            # Using full signal FFT - Real FFT has signal_length//2 + 1 output size
+            fft_output_size = signal_length // 2 + 1
             
         # If we're processing real and imaginary parts separately, double the size
         if process_complex == 'separate':
@@ -71,7 +68,7 @@ class SpectralBranch(nn.Module):
         
         # Register Hann window if using windowing
         if self.use_window:
-            self.register_buffer('window', torch.hann_window(window_size))
+            self.register_buffer('window', torch.hann_window(self.window_size))
             
     def _process_fft(self, fft_result):
         """
@@ -123,24 +120,18 @@ class SpectralBranch(nn.Module):
             if self.use_window:
                 windows = windows * self.window
             
-            # Apply FFT to each window
-            if self.fft_mode == 'rfft':
-                fft_windows = torch.fft.rfft(windows, dim=2)
-            else:
-                fft_windows = torch.fft.fft(windows, dim=2)
-                
+            # Apply Real FFT to each window
+            fft_windows = torch.fft.rfft(windows, dim=2)
+            
             # Process FFT results based on specified mode
             processed_fft = self._process_fft(fft_windows)
             
             # Average across windows
             fft_features = torch.mean(processed_fft, dim=1)
         else:
-            # Apply FFT to entire signal
-            if self.fft_mode == 'rfft':
-                fft_result = torch.fft.rfft(x_squeezed)
-            else:
-                fft_result = torch.fft.fft(x_squeezed)
-                
+            # Apply Real FFT to entire signal
+            fft_result = torch.fft.rfft(x_squeezed)
+            
             # Process FFT results
             fft_features = self._process_fft(fft_result)
         
