@@ -116,9 +116,9 @@ class GradientAwareLoss(BaseLoss):
         # Gradient loss - first derivative should be zero at peaks
         gradient_loss = torch.mean(first_deriv ** 2)
         
-        # Second derivative loss - should be as negative as possible at peaks
-        # More positive second derivative = more error
-        curvature_error = torch.mean(second_deriv)
+        # Second derivative loss - maximize negative curvature at peaks
+        # Using mean() of second_deriv would minimize it, so we use -mean() to maximize negative curvature
+        curvature_error = -torch.mean(second_deriv)
         
         # Combine all losses
         total_loss = (

@@ -57,17 +57,18 @@ def analyze_loss_components():
         # Get position and magnitude losses
         pos_loss, mag_loss = criterion.compute_position_and_magnitude_losses(pred_peaks, true_peaks, signals)
         
-        # Get gradient losses
-        peak_positions = torch.cat([pred_peaks[:, 0:1], pred_peaks[:, 2:]], dim=1)
-        first_deriv, second_deriv = criterion.compute_gradients(signals, peak_positions)
+        # Get gradient losses - but only look at the second peak position
+        peak_position = pred_peaks[:, 2:3]  # Just look at p2_pos
+        first_deriv, second_deriv = criterion.compute_gradients(signals, peak_position)
         
         # Store individual loss components
         position_errors.append(pos_loss.item())
         magnitude_errors.append(mag_loss.item())
-        gradient_errors.append(first_deriv.pow(2).mean().item())  # Squared gradient error
+        gradient_errors.append(first_deriv.pow(2).mean().item())  # Gradient error at p2
         
-        # Curvature error - more positive = more error
-        curvature_errors.append(second_deriv.mean().item())
+        # Curvature error - we want negative curvature at the peak
+        # Higher second derivative = less concave = more error
+        curvature_errors.append(second_deriv.mean().item())  # Just look at curvature at p2
 
     # Create vertically stacked subplots
     fig = make_subplots(
@@ -76,7 +77,7 @@ def analyze_loss_components():
             'Position Error',
             'Magnitude Error',
             'Gradient Error (should be zero at peaks)',
-            'Curvature Error (more negative is better)'
+            'Curvature Error (should be negative at peaks)'
         ),
         vertical_spacing=0.05,
         shared_xaxes=True
@@ -88,6 +89,11 @@ def analyze_loss_components():
     # Add traces for each subplot
     error_names = ['Position', 'Magnitude', 'Gradient', 'Curvature']
     errors_list = [position_errors, magnitude_errors, gradient_errors, curvature_errors]
+
+    # print min/max of each error list
+    for errors in errors_list:
+        print(f"Error name: {error_names[errors_list.index(errors)]}")
+        print(f"Min: {np.min(errors)}, Max: {np.max(errors)}")
     
     # Normalize all error lists
     normalized_errors = [normalize_errors(errors) for errors in errors_list]
