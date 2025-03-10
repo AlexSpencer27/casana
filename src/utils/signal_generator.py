@@ -85,8 +85,8 @@ def generate_batch() -> tuple[torch.Tensor, torch.Tensor]:
         # # and 0.6-1.8 for second peak (roughly 30%-90% of time)
         # peak1_time = np.random.uniform(0.1, max_time * 0.4)  # First 40% of available time
         # peak2_time = np.random.uniform(max_time * 0.6, max_time)  # Last 40% of available time
-        peak1_time = np.random.uniform(0.1, 0.5)
-        peak2_time = np.random.uniform(0.6, 1.8)
+        peak1_time = np.random.uniform(0.1, 0.5) * sampling_rate / (length * 2)
+        peak2_time = np.random.uniform(0.6, 1.8) * sampling_rate / (length * 2)
         
         signal = generate_signal(
             p1_position=peak1_time,
