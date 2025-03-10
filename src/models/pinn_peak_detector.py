@@ -6,7 +6,7 @@ import numpy as np
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
-from src.models.components import SpectralBranch, GradientRefinementModule, PeakOrderingLayer
+from src.models.components import SpectralBranch, GradientRefinementModule, BoundedPeakOutput
 
 class HanningTemplateLayer(nn.Module):
     """Custom layer for template matching with Hanning windows of different widths"""
@@ -100,11 +100,11 @@ class PINNPeakDetector(BaseModel):
             nn.ReLU()
         )
         
-        # Final output layer - directly output the 3 values as required
-        self.output_layer = nn.Linear(64, 3)
+        # Output layer
+        self.output = nn.Linear(64, 3)
         
-        # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer()
+        # Peak output layer
+        self.peak_output = BoundedPeakOutput()
         
         # Dropout for regularization
         self.dropout = nn.Dropout(0.2)
@@ -141,12 +141,15 @@ class PINNPeakDetector(BaseModel):
         fused = self.fusion(combined_features)
         
         # Initial output layer
-        initial_output = self.output_layer(fused)
-        
-        # Ensure the outputs follow the constraint that peak1 < midpoint < peak2
-        sorted_output = self.peak_ordering(initial_output)
+        initial_output = self.output(fused)
         
         # Apply gradient refinement to find exact zero-gradient points
-        refined_output = self.refine_peaks(x, sorted_output)
+        refined_output = self.refine_peaks(x, initial_output)
         
-        return refined_output
+        x = self.dropout(refined_output)
+        x = self.output(x)
+        
+        # Apply bounded peak output layer
+        x = self.peak_output(x)
+        
+        return x

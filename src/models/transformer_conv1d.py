@@ -6,7 +6,7 @@ import math
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
-from src.models.components import PeakOrderingLayer
+from src.models.components import BoundedPeakOutput
 
 @register_model("transformer_conv1d")
 class TransformerConv1D(BaseModel):
@@ -50,8 +50,8 @@ class TransformerConv1D(BaseModel):
         self.fc2 = nn.Linear(128, 64)
         self.output = nn.Linear(64, 3)
         
-        # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer()
+        # Peak output layer
+        self.peak_output = BoundedPeakOutput()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
@@ -80,8 +80,8 @@ class TransformerConv1D(BaseModel):
         x = F.relu(self.fc2(x))
         x = self.output(x)
         
-        # Ensure peak1 < midpoint < peak2 using component
-        x = self.peak_ordering(x)
+        # Apply bounded peak output layer
+        x = self.peak_output(x)
         
         return x
         

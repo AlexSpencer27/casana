@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
-from src.models.components import MultiScaleCNNBranch, SkipConnectionMLP, PeakOrderingLayer, AttentionModule, AdaptiveFeaturePooling
+from src.models.components import MultiScaleCNNBranch, SkipConnectionMLP, BoundedPeakOutput, AttentionModule, AdaptiveFeaturePooling
 
 @register_model("attention_dilated_conv1d")
 class AttentionDilatedConv1D(BaseModel):
@@ -54,8 +54,8 @@ class AttentionDilatedConv1D(BaseModel):
         # Output layer
         self.output = nn.Linear(64, 3)
         
-        # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer()
+        # Peak output layer
+        self.peak_output = BoundedPeakOutput()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
@@ -90,7 +90,7 @@ class AttentionDilatedConv1D(BaseModel):
         # Output layer
         x = self.output(x)
         
-        # Ensure peak1 < midpoint < peak2 using component
-        x = self.peak_ordering(x)
+        # Apply bounded peak output layer
+        x = self.peak_output(x)
         
         return x

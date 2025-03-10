@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
-from src.models.components import SpectralBranch, PeakOrderingLayer, MultiScaleCNNBranch, SkipConnectionMLP
+from src.models.components import SpectralBranch, BoundedPeakOutput, MultiScaleCNNBranch, SkipConnectionMLP
 
 @register_model("spectral_peak_detector")
 class SpectralPeakDetector(BaseModel):
@@ -61,8 +61,8 @@ class SpectralPeakDetector(BaseModel):
         # Regularization
         self.dropout = nn.Dropout(0.3)
         
-        # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer()
+        # Peak output layer
+        self.peak_output = BoundedPeakOutput()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
@@ -134,7 +134,7 @@ class SpectralPeakDetector(BaseModel):
         x = self.dropout(x)
         x = self.output(x)
         
-        # Ensure peak1 < midpoint < peak2 using component
-        x = self.peak_ordering(x)
+        # Apply bounded peak output layer
+        x = self.peak_output(x)
         
         return x

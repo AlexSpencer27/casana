@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
-from src.models.components import MultiScaleCNNBranch, SkipConnectionMLP, PeakOrderingLayer, AdaptiveFeaturePooling
+from src.models.components import MultiScaleCNNBranch, SkipConnectionMLP, BoundedPeakOutput, AdaptiveFeaturePooling
 
 @register_model("multi_scale_conv1d")
 class MultiScaleConv1D(BaseModel):
@@ -41,8 +41,8 @@ class MultiScaleConv1D(BaseModel):
         # Output layer
         self.output = nn.Linear(64, 3)
         
-        # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer()
+        # Peak output layer
+        self.peak_output = BoundedPeakOutput()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
@@ -67,7 +67,7 @@ class MultiScaleConv1D(BaseModel):
         # Output layer
         x = self.output(x)
         
-        # Ensure peak1 < midpoint < peak2 using component
-        x = self.peak_ordering(x)
+        # Apply bounded peak output layer
+        x = self.peak_output(x)
         
         return x 

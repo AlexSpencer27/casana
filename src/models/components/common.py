@@ -5,40 +5,40 @@ Common utilities and components used across models.
 import torch
 import torch.nn as nn
 
-class PeakOrderingLayer(nn.Module):
+class BoundedPeakOutput(nn.Module):
     def __init__(self):
         """
-        Simple layer to ensure predictions are in valid range and compute midpoint.
+        A better approach for ensuring peak predictions are in the [0,1] range
+        using sigmoid activation.
         """
         super().__init__()
         
     def forward(self, x):
         """
-        Apply basic constraints to ensure valid peak positions.
+        Apply sigmoid to get values in [0,1] range and compute proper midpoint.
         
         Args:
-            x: Input tensor of shape [batch_size, 3] representing normalized positions
-               [peak1, midpoint, peak2]
+            x: Input tensor of shape [batch_size, 3] representing unbounded positions
+               [peak1, _, peak2]
             
         Returns:
-            Tensor of shape [batch_size, 3] with constrained positions in [0,1]
+            Tensor of shape [batch_size, 3] with positions in [0,1]
         """
-        return x
-        # Hard clamp to [0,1] range
-        x = torch.clamp(x, 0.0, 1.0)
+        # Apply sigmoid to get all values in [0,1]
+        x = torch.sigmoid(x)
         
-        # Extract peaks and midpoint
+        # Extract peaks and compute midpoint
         peak1, _, peak2 = x.split(1, dim=1)
         
-        # Compute midpoint as median between peaks
+        # Compute midpoint as average between peaks
         midpoint = (peak1 + peak2) * 0.5
         
         # Concatenate back to [batch_size, 3]
         x = torch.cat([peak1, midpoint, peak2], dim=1)
         
         return x
-    
-    
+
+
 class AdaptiveFeaturePooling(nn.Module):
     def __init__(self, output_size=16, pooling_type='avg'):
         """

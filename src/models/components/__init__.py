@@ -7,7 +7,7 @@ This module contains reusable building blocks that can be combined to create mod
 from .multi_scale_cnn import MultiScaleCNNBranch
 from .spectral_branch import SpectralBranch
 from .gradient_refinement import GradientRefinementModule
-from .common import PeakOrderingLayer, AdaptiveFeaturePooling
+from .common import AdaptiveFeaturePooling, BoundedPeakOutput
 from .mlp_blocks import SkipConnectionMLP
 from .attention import AttentionModule, CrossPathwayAttention
 
@@ -16,8 +16,8 @@ __all__ = [
     'MultiScaleCNNBranch',
     'SpectralBranch',
     'GradientRefinementModule',
-    'PeakOrderingLayer',
     'AdaptiveFeaturePooling',
+    'BoundedPeakOutput',
     'SkipConnectionMLP',
     'AttentionModule',
     'CrossPathwayAttention',

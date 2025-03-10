@@ -10,8 +10,8 @@ from src.models.components import (
     SpectralBranch, 
     CrossPathwayAttention, 
     SkipConnectionMLP, 
-    PeakOrderingLayer,
-    AdaptiveFeaturePooling
+    AdaptiveFeaturePooling,
+    BoundedPeakOutput
 )
 
 @register_model("dual_pathway_fft")
@@ -63,8 +63,8 @@ class DualPathwayFFT(BaseModel):
         # Output layer
         self.output = nn.Linear(64, 3)
         
-        # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer()
+        # Peak output layer
+        self.peak_output = BoundedPeakOutput()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
@@ -91,7 +91,7 @@ class DualPathwayFFT(BaseModel):
         # Output layer
         x = self.output(x)
         
-        # Ensure peak1 < midpoint < peak2
-        x = self.peak_ordering(x)
+        # Apply bounded peak output layer
+        x = self.peak_output(x)
         
         return x
