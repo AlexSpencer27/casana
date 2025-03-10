@@ -23,17 +23,21 @@ def generate_signal(
     Returns:
         torch.Tensor: The generated signal
     """
-    signal = np.zeros(config.signal.length)
+    length = config.signal.length
+    sampling_rate = config.signal.sampling_rate
+    
+    signal = np.zeros(length)
 
     peak1_width = np.random.randint(10, 40)
     peak2_width = np.random.randint(10, 40)
 
-    peak1_idx = int(p1_position * config.signal.sampling_rate)
-    peak2_idx = int(p2_position * config.signal.sampling_rate)
+    # Calculate peak indices based on time positions
+    peak1_idx = int(p1_position * sampling_rate)
+    peak2_idx = int(p2_position * sampling_rate)
 
     # Ensure peak indices and widths are within signal bounds
-    peak1_idx = min(max(peak1_width, peak1_idx), config.signal.length - peak1_width)
-    peak2_idx = min(max(peak2_width, peak2_idx), config.signal.length - peak2_width)
+    peak1_idx = min(max(peak1_width, peak1_idx), length - peak1_width)
+    peak2_idx = min(max(peak2_width, peak2_idx), length - peak2_width)
 
     # Add peaks with ramps
     signal[peak1_idx - peak1_width : peak1_idx + peak1_width] = p1_amplitude * np.hanning(peak1_width * 2)
@@ -41,7 +45,7 @@ def generate_signal(
 
     # Add complex noise signal composed of multiple sine waves
     if add_complex_signal:
-        complex_signal = np.zeros(config.signal.length)
+        complex_signal = np.zeros(length)
         num_sine_waves = np.random.randint(2, 5)
 
         for _ in range(num_sine_waves):
@@ -49,7 +53,7 @@ def generate_signal(
             amplitude = np.random.uniform(0.05, 0.2)
             phase = np.random.uniform(0, 2 * np.pi)
             sine_wave = amplitude * np.sin(
-                2 * np.pi * frequency * np.linspace(0, config.signal.length / config.signal.sampling_rate, config.signal.length) + phase
+                2 * np.pi * frequency * np.linspace(0, length / sampling_rate, length) + phase
             )
             complex_signal += sine_wave
 
@@ -66,22 +70,36 @@ def generate_batch() -> tuple[torch.Tensor, torch.Tensor]:
     """
     signals = []
     targets = []
+    
+    length = config.signal.length
+    sampling_rate = config.signal.sampling_rate
+    batch_size = config.training.batch_size
 
-    for _ in range(config.training.batch_size):
-        # Adjust time ranges based on signal length to ensure peaks fit within the signal
-        # For shorter signals, use smaller time ranges
-        max_time = config.signal.length / config.signal.sampling_rate * 0.9  # Use 90% of available time
+    for _ in range(batch_size):
+        # # Calculate the maximum time based on the signal length and sampling rate
+        # # This ensures the peaks will fit within the signal regardless of length
+        # max_time = length / sampling_rate * 0.9  # Use 90% of available time
         
-        # Divide the available time into two regions for the two peaks
-        peak1_time = np.random.uniform(0.1, max_time * 0.4)  # First 40% of available time
-        peak2_time = np.random.uniform(max_time * 0.6, max_time)  # Last 40% of available time
+        # # Use the original time ranges but scaled to the available time
+        # # Original used 0.1-0.5 for first peak (roughly first 30% of time)
+        # # and 0.6-1.8 for second peak (roughly 30%-90% of time)
+        # peak1_time = np.random.uniform(0.1, max_time * 0.4)  # First 40% of available time
+        # peak2_time = np.random.uniform(max_time * 0.6, max_time)  # Last 40% of available time
+        peak1_time = np.random.uniform(0.1, 0.5)
+        peak2_time = np.random.uniform(0.6, 1.8)
         
-        signal = generate_signal(p1_position=peak1_time, p2_position=peak2_time)
+        signal = generate_signal(
+            p1_position=peak1_time,
+            p2_position=peak2_time,
+            p1_amplitude=1.0,
+            p2_amplitude=0.8,
+        )
         signal = (signal - signal.mean()) / signal.std()
 
-        peak1_sample = peak1_time * config.signal.sampling_rate / config.signal.length
-        peak2_sample = peak2_time * config.signal.sampling_rate / config.signal.length
-        midpoint_sample = (peak1_time + peak2_time) / 2 * config.signal.sampling_rate / config.signal.length
+        # Calculate normalized sample positions (0-1 range)
+        peak1_sample = peak1_time * sampling_rate / length
+        peak2_sample = peak2_time * sampling_rate / length
+        midpoint_sample = (peak1_time + peak2_time) / 2 * sampling_rate / length
 
         signals.append(signal)
         targets.append(torch.tensor([peak1_sample, midpoint_sample, peak2_sample], dtype=torch.float32))
