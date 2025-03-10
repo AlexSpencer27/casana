@@ -6,7 +6,7 @@ model:
   name: multi_scale_conv1d
 signal:
   length: 1024
-  sampling_rate: 1024
+  sampling_rate: 512
   add_complex_signal: false
 training:
   batch_size: 32
@@ -14,13 +14,13 @@ training:
     min_delta: 0.0001
     patience: 2000
   learning_rate: 0.0001
-  num_epochs: 2000
+  num_epochs: 10000
 loss:
   name: gradient_aware
-  position_weight: 10.0
-  magnitude_weight: 0.04
-  gradient_weight: 0.000002
-  second_derivative_weight: 0.000005
+  position_weight: 50.0
+  magnitude_weight: 0.1
+  gradient_weight: 0.00000001
+  second_derivative_weight: 0.00001
 visualization:
   num_predictions: 10
-  plot_frequency: 100  # Set to null to only plot final loss figure, or an integer for periodic plotting
+  plot_frequency: 500  # Set to null to only plot final loss figure, or an integer for periodic plotting
