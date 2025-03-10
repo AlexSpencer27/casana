@@ -25,7 +25,8 @@ class TrainingMonitor:
         self.losses: List[float] = []
         
         # Early stopping variables
-        self.best_loss = float('inf')
+        self.best_loss = float('inf')  # For model saving
+        self.best_ma_loss = float('inf')  # For early stopping
         self.patience_counter = 0
         self.min_delta = config.training.early_stopping.min_delta
         self.patience = config.training.early_stopping.patience
@@ -44,16 +45,40 @@ class TrainingMonitor:
         ma_window = np.clip(rounded_points, 1, 50) # clip from 1 to 50
         return ma_window
     
-    def _calculate_moving_average(self) -> np.ndarray:
-        """Calculate moving average of losses.
+    def _calculate_current_ma(self) -> Optional[float]:
+        """Calculate moving average for the most recent window.
         
         Returns:
-            Array of moving averages with same length as losses
+            Current moving average value or None if not enough data points
         """
-        losses_array = np.array(self.losses)
+        if len(self.losses) < 2:
+            return None
+            
         ma_window = self._get_ma_window()
+        if len(self.losses) < ma_window:
+            return None
+            
+        # Calculate MA only for the most recent window
+        recent_losses = self.losses[-ma_window:]
+        return float(sum(recent_losses) / ma_window)
+    
+    def _calculate_moving_averages(self) -> np.ndarray:
+        """Calculate moving averages for all points for plotting.
+        
+        Returns:
+            Array of moving averages
+        """
+        ma_window = self._get_ma_window()
+        if len(self.losses) < ma_window:
+            return np.array([])
+            
+        # Convert losses to numpy array
+        losses_array = np.array(self.losses)
+        
+        # Calculate moving averages using convolution
         weights = np.ones(ma_window) / ma_window
         ma = np.convolve(losses_array, weights, mode='valid')
+        
         # Pad the beginning to match length
         padding = np.full(ma_window - 1, np.nan)
         return np.concatenate([padding, ma])
@@ -70,9 +95,18 @@ class TrainingMonitor:
         """
         self.losses.append(loss)
         
-        # Early stopping check
+        # Update best point estimate loss (for model saving)
         if loss < self.best_loss - self.min_delta:
             self.best_loss = loss
+        
+        # Calculate moving average for early stopping decision
+        current_ma = self._calculate_current_ma()
+        if current_ma is None:
+            return True  # Continue training if not enough data
+            
+        # Simple early stopping based on moving average improvement
+        if current_ma < self.best_ma_loss - self.min_delta:
+            self.best_ma_loss = current_ma
             self.patience_counter = 0
         else:
             self.patience_counter += 1
@@ -109,9 +143,12 @@ class TrainingMonitor:
         # Add moving average line
         ma_window = self._get_ma_window()
         if len(self.losses) >= ma_window:
-            ma = self._calculate_moving_average()
+            moving_averages = self._calculate_moving_averages()
+            # Only plot non-NaN values
+            valid_indices = ~np.isnan(moving_averages)
             fig.add_trace(go.Scatter(
-                y=ma,
+                x=np.arange(len(moving_averages))[valid_indices],
+                y=moving_averages[valid_indices],
                 mode='lines',
                 name=f'{ma_window}-point Moving Average',
                 line=dict(

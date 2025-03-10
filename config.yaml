@@ -12,7 +12,7 @@ training:
   batch_size: 32
   early_stopping:
     min_delta: 0.0001
-    patience: 2000
+    patience: 100
   learning_rate: 0.0001
   num_epochs: 10000
 loss:
@@ -23,4 +23,4 @@ loss:
   second_derivative_weight: 0.0001
 visualization:
   num_predictions: 10
-  plot_frequency: 500  # Set to null to only plot final loss figure, or an integer for periodic plotting
+  plot_frequency: 50  # Set to null to only plot final loss figure, or an integer for periodic plotting
