@@ -6,36 +6,51 @@ import torch
 import torch.nn as nn
 
 class PeakOrderingLayer(nn.Module):
-    def __init__(self, softness=0.1):
+    def __init__(self, softness=0.1, min_separation=0.1):
         """
-        Ensure consistent ordering of peak outputs (peak1 < midpoint < peak2).
+        Ensure consistent ordering and valid ranges for peak outputs.
         
-        This layer applies a soft differentiable sorting to ensure the output
-        follows the constraint that peak1 < midpoint < peak2, while maintaining
-        gradient flow.
+        This layer applies constraints to ensure:
+        1. All positions are in [0, 1] range (normalized)
+        2. peak1 < midpoint < peak2
+        3. Maintains minimum separation between peaks
         
         Args:
-            softness: Smoothness parameter for differentiable sorting (default: 0.1)
-                     Higher values make the sorting more gradual but less strict.
+            softness: Smoothness parameter for differentiable constraints (default: 0.1)
+            min_separation: Minimum separation between peaks in normalized space (default: 0.1)
         """
         super().__init__()
         self.softness = softness
+        self.min_separation = min_separation
         
     def forward(self, x):
         """
-        Apply soft ordering constraint to ensure peak1 < midpoint < peak2.
+        Apply constraints to ensure valid peak positions.
         
         Args:
-            x: Input tensor of shape [batch_size, 3] representing the three peak positions
+            x: Input tensor of shape [batch_size, 3] representing normalized positions
+               [peak1, midpoint, peak2]
             
         Returns:
-            Tensor of shape [batch_size, 3] with ordered peak positions
+            Tensor of shape [batch_size, 3] with constrained positions in [0,1]
         """
-        # Ensure peak1 < midpoint < peak2 using soft constraints
-        # Sort the outputs but maintain gradient flow with a differentiable approach
-        sorted_x = x + self.softness * (torch.sort(x, dim=1)[0] - x)
+        # Hard clamp to [0,1] range
+        x = torch.clamp(x, 0.0, 1.0)
         
-        return sorted_x
+        # Extract peaks and midpoint
+        peak1, midpoint, peak2 = x.split(1, dim=1)
+        
+        # Ensure minimum separation between peaks
+        min_peak2 = peak1 + self.min_separation
+        peak2 = torch.maximum(peak2, min_peak2)
+        
+        # Recompute midpoint to ensure it's between peaks
+        midpoint = peak1 + (peak2 - peak1) * 0.5
+        
+        # Concatenate back to [batch_size, 3]
+        x = torch.cat([peak1, midpoint, peak2], dim=1)
+        
+        return x
     
     
 class AdaptiveFeaturePooling(nn.Module):
