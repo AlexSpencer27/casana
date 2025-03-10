@@ -31,6 +31,10 @@ def generate_signal(
     peak1_idx = int(p1_position * config.signal.sampling_rate)
     peak2_idx = int(p2_position * config.signal.sampling_rate)
 
+    # Ensure peak indices and widths are within signal bounds
+    peak1_idx = min(max(peak1_width, peak1_idx), config.signal.length - peak1_width)
+    peak2_idx = min(max(peak2_width, peak2_idx), config.signal.length - peak2_width)
+
     # Add peaks with ramps
     signal[peak1_idx - peak1_width : peak1_idx + peak1_width] = p1_amplitude * np.hanning(peak1_width * 2)
     signal[peak2_idx - peak2_width : peak2_idx + peak2_width] = p2_amplitude * np.hanning(peak2_width * 2)
@@ -64,8 +68,14 @@ def generate_batch() -> tuple[torch.Tensor, torch.Tensor]:
     targets = []
 
     for _ in range(config.training.batch_size):
-        peak1_time = np.random.uniform(0.1, 0.5)
-        peak2_time = np.random.uniform(0.6, 1.8)
+        # Adjust time ranges based on signal length to ensure peaks fit within the signal
+        # For shorter signals, use smaller time ranges
+        max_time = config.signal.length / config.signal.sampling_rate * 0.9  # Use 90% of available time
+        
+        # Divide the available time into two regions for the two peaks
+        peak1_time = np.random.uniform(0.1, max_time * 0.4)  # First 40% of available time
+        peak2_time = np.random.uniform(max_time * 0.6, max_time)  # Last 40% of available time
+        
         signal = generate_signal(p1_position=peak1_time, p2_position=peak2_time)
         signal = (signal - signal.mean()) / signal.std()
 

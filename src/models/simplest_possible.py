@@ -13,7 +13,7 @@ class SimplestPossible(BaseModel):
         super().__init__()
         # Simple two-layer architecture
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(2048, 64)  # First reduce dimensionality
+        self.fc1 = nn.Linear(config.signal.length, 64)  # First reduce dimensionality
         self.fc2 = nn.Linear(64, 3)      # Output the required 3 values
         self.dropout = nn.Dropout(0.2)    # Light regularization
         

@@ -23,7 +23,7 @@ class SpectralPeakDetector(BaseModel):
         
         # Frequency domain processing using SpectralBranch
         self.spectral_branch = SpectralBranch(
-            signal_length=2048,
+            signal_length=config.signal.length,
             out_features=64,
             window_size=256,
             stride=128,

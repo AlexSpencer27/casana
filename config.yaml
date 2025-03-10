@@ -1,7 +1,7 @@
 model:
   name: pinn_peak_detector
 signal:
-  length: 2048
+  length: 1024
   sampling_rate: 1024
 training:
   batch_size: 32

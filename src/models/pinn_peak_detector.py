@@ -51,14 +51,14 @@ class PINNPeakDetector(BaseModel):
         super().__init__()
         
         # Signal parameters
-        self.signal_length = 2048
+        self.signal_length = config.signal.length
         
         # Flatten layer (to match the SimplestPossible interface)
         self.flatten = nn.Flatten()
         
         # Early region network (focused on first peak region)
         self.early_fc = nn.Sequential(
-            nn.Linear(2048, 256),
+            nn.Linear(config.signal.length, 256),
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(256, 64),
@@ -67,7 +67,7 @@ class PINNPeakDetector(BaseModel):
         
         # Late region network (focused on second peak region)
         self.late_fc = nn.Sequential(
-            nn.Linear(2048, 256),
+            nn.Linear(config.signal.length, 256),
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(256, 64),

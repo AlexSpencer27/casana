@@ -21,8 +21,8 @@ class TransformerConv1D(BaseModel):
         self.conv2 = nn.Conv1d(32, 64, kernel_size=5, padding=2, stride=2)
         
         # Calculate sequence length after convolutions and pooling
-        # Original: 2048 -> Conv1(stride 2): 1024 -> Pool1: 512 -> Conv2(stride 2): 256
-        seq_len = 256
+        # Original signal length -> Conv1(stride 2) -> Pool1(stride 2) -> Conv2(stride 2)
+        seq_len = config.signal.length // 2 // 2 // 2
         embed_dim = 64
         
         # Position encoding
