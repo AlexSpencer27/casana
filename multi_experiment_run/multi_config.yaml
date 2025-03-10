@@ -1,6 +1,6 @@
 base_config:
   signal:
-    length: 512
+    length: 1024
     sampling_rate: 512
   visualization:
     num_predictions: 10

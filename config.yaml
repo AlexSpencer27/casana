@@ -5,14 +5,14 @@ model:
     max_iterations: 10
   name: pinn_peak_detector
 signal:
-  length: 512
+  length: 1024
   sampling_rate: 512
 training:
   batch_size: 32
   early_stopping:
     min_delta: 0.0001
-    patience: 200
+    patience: 20
   learning_rate: 0.0001
-  num_epochs: 2000
+  num_epochs: 20
 visualization:
   num_predictions: 10

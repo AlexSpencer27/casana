@@ -27,17 +27,13 @@ def generate_signal(
     sampling_rate = config.signal.sampling_rate
     
     signal = np.zeros(length)
-
-    peak1_width = np.random.randint(10, 40)
-    peak2_width = np.random.randint(10, 40)
-
+    
     # Calculate peak indices based on time positions
     peak1_idx = int(p1_position * sampling_rate)
     peak2_idx = int(p2_position * sampling_rate)
 
-    # Ensure peak indices and widths are within signal bounds
-    peak1_idx = min(max(peak1_width, peak1_idx), length - peak1_width)
-    peak2_idx = min(max(peak2_width, peak2_idx), length - peak2_width)
+    peak1_width = np.clip(np.random.randint(10, 40), 10, peak1_idx-1)
+    peak2_width = np.clip(np.random.randint(10, 40), 10, (length-peak2_idx-1))
 
     # Add peaks with ramps
     signal[peak1_idx - peak1_width : peak1_idx + peak1_width] = p1_amplitude * np.hanning(peak1_width * 2)
@@ -76,17 +72,8 @@ def generate_batch() -> tuple[torch.Tensor, torch.Tensor]:
     batch_size = config.training.batch_size
 
     for _ in range(batch_size):
-        # # Calculate the maximum time based on the signal length and sampling rate
-        # # This ensures the peaks will fit within the signal regardless of length
-        # max_time = length / sampling_rate * 0.9  # Use 90% of available time
-        
-        # # Use the original time ranges but scaled to the available time
-        # # Original used 0.1-0.5 for first peak (roughly first 30% of time)
-        # # and 0.6-1.8 for second peak (roughly 30%-90% of time)
-        # peak1_time = np.random.uniform(0.1, max_time * 0.4)  # First 40% of available time
-        # peak2_time = np.random.uniform(max_time * 0.6, max_time)  # Last 40% of available time
-        peak1_time = np.random.uniform(0.1, 0.5) * sampling_rate / (length * 2)
-        peak2_time = np.random.uniform(0.6, 1.8) * sampling_rate / (length * 2)
+        peak1_time = np.random.uniform(0.1, 0.5) 
+        peak2_time = np.random.uniform(0.6, 1.8)
         
         signal = generate_signal(
             p1_position=peak1_time,
