@@ -29,6 +29,7 @@ class SignalConfig:
 @dataclass
 class VisualizationConfig:
     num_predictions: int = 32
+    plot_frequency: Optional[int] = None  # If None, only plot final loss figure
 
 
 @dataclass

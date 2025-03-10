@@ -11,18 +11,16 @@ from src.config.config import config
 class TrainingMonitor:
     """A class to monitor and visualize training progress."""
     
-    def __init__(self, project_root: Path, save_frequency: int = 5, base_round: int = 10):
+    def __init__(self, project_root: Path, base_round: int = 10):
         """Initialize the training monitor.
         
         Args:
             project_root: Root directory of the project
-            save_frequency: How often to save plots (in epochs)
             base_round: Base number to round number of points to for MA window calculation
         """
         self.save_dir = project_root / 'experiments' / config.model.name / 'figures' 
         shutil.rmtree(self.save_dir, ignore_errors=True)
         self.save_dir.mkdir(exist_ok=True, parents=True)
-        self.save_frequency = save_frequency
         self.base_round = base_round
         self.losses: List[float] = []
         
@@ -79,9 +77,10 @@ class TrainingMonitor:
         else:
             self.patience_counter += 1
         
-        # Save plot if we hit the save frequency
-        if epoch is not None and (epoch + 1) % self.save_frequency == 0:
-            self.save_plot("loss.png")
+        # Save plot if plot_frequency is set and we hit the frequency
+        if epoch is not None and config.visualization.plot_frequency is not None:
+            if (epoch + 1) % config.visualization.plot_frequency == 0:
+                self.save_plot("loss.png")
             
         # Return True to continue training, False to stop
         return self.patience_counter < self.patience
