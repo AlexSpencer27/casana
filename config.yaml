@@ -1,26 +1,26 @@
+loss:
+  gradient_weight: 1.0e-08
+  magnitude_weight: 1.0
+  name: gradient_aware
+  position_weight: 100.0
+  second_derivative_weight: 0.0001
 model:
   gradient_refinement:
     base_step_size: 0.001
-    enabled: false
+    enabled: true
     max_iterations: 10
-  name: multi_scale_conv1d
+  name: simplest_possible
 signal:
+  add_complex_signal: true
   length: 1024
   sampling_rate: 512
-  add_complex_signal: false
 training:
   batch_size: 32
   early_stopping:
     min_delta: 0.0001
-    patience: 100
-  learning_rate: 0.0001
-  num_epochs: 10000
-loss:
-  name: gradient_aware
-  position_weight: 100.0
-  magnitude_weight: 1.0
-  gradient_weight: 0.00000001
-  second_derivative_weight: 0.0001
+    patience: 1000
+  learning_rate: 5.0e-05
+  num_epochs: 1000000
 visualization:
   num_predictions: 10
-  plot_frequency: 50  # Set to null to only plot final loss figure, or an integer for periodic plotting
+  plot_frequency: 500
