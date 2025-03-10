@@ -137,7 +137,11 @@ class ExperimentTracker:
             "hyperparameters": {
                 "num_epochs": config.training.num_epochs,
                 "batch_size": config.training.batch_size,
-                "learning_rate": config.training.learning_rate
+                "learning_rate": {
+                    "start": config.curriculum.learning_rate.start,
+                    "end": config.curriculum.learning_rate.end,
+                    "epochs_to_min": config.curriculum.learning_rate.epochs_to_min
+                }
             },
             "training": {
                 "final_loss": float(final_loss)

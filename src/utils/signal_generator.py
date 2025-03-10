@@ -41,16 +41,16 @@ def generate_signal(
     signal[peak2_idx - peak2_width : peak2_idx + peak2_width] = p2_amplitude * np.hanning(peak2_width * 2)
 
     # For evaluation, use maximum noise amplitude if noise_scale is None
-    current_noise_scale = config.signal.complex_noise.end_amplitude if noise_scale is None else noise_scale
+    current_noise_scale = config.curriculum.complex_noise.end_amplitude if noise_scale is None else noise_scale
 
     # Add complex noise signal if amplitude is above minimum threshold
-    if current_noise_scale >= config.signal.complex_noise.min_amplitude:
+    if current_noise_scale >= config.curriculum.complex_noise.min_amplitude:
         complex_signal = np.zeros(length)
         num_sine_waves = np.random.randint(2, 5)
         
         base_amplitude_range = (0.05, 0.2)  # Base range before scaling
-        scaled_min = base_amplitude_range[0] * (current_noise_scale / config.signal.complex_noise.end_amplitude)
-        scaled_max = base_amplitude_range[1] * (current_noise_scale / config.signal.complex_noise.end_amplitude)
+        scaled_min = base_amplitude_range[0] * (current_noise_scale / config.curriculum.complex_noise.end_amplitude)
+        scaled_max = base_amplitude_range[1] * (current_noise_scale / config.curriculum.complex_noise.end_amplitude)
 
         for _ in range(num_sine_waves):
             frequency = np.random.uniform(1, 10)

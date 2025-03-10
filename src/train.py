@@ -16,18 +16,7 @@ from src.models import get_model
 from src.losses import get_loss
 from src.utils.experiment_tracker import ExperimentTracker
 from src.utils.training_monitor import TrainingMonitor
-
-
-def get_current_noise_amplitude(epoch: int) -> float:
-    """Calculate the current noise amplitude based on curriculum learning schedule."""
-    start_amp = config.signal.complex_noise.start_amplitude
-    end_amp = config.signal.complex_noise.end_amplitude
-    max_epochs = config.signal.complex_noise.epochs_to_max
-    
-    # Linear interpolation from start to end amplitude
-    progress = min(epoch / max_epochs, 1.0)
-    current_amplitude = start_amp + (end_amp - start_amp) * progress
-    return current_amplitude
+from src.utils.curriculum import CurriculumManager
 
 
 def main() -> None:
@@ -58,13 +47,18 @@ def main() -> None:
     loss_class = get_loss(config.loss.name)
     criterion = loss_class().to(device)  
     
-    optimizer = optim.Adam(model.parameters(), lr=config.training.learning_rate)
+    # Initialize optimizer and curriculum manager
+    optimizer = optim.Adam(model.parameters(), lr=config.curriculum.learning_rate.start)
+    curriculum = CurriculumManager(optimizer)
+
+    # Store current epoch for signal generator
+    current_epoch = 0
 
     # Monkey patch the generate_signal function to use curriculum learning
     original_generate_signal = generate_signal
     def curriculum_generate_signal(*args, **kwargs):
         # Add current noise amplitude to signal generation
-        kwargs['noise_scale'] = get_current_noise_amplitude(epoch)
+        kwargs['noise_scale'] = curriculum.get_noise_amplitude(current_epoch)
         return original_generate_signal(*args, **kwargs)
     
     import src.utils.signal_generator
@@ -73,6 +67,12 @@ def main() -> None:
     # training loop
     pbar = tqdm(range(config.training.num_epochs), desc="Training")
     for epoch in range(config.training.num_epochs):
+        # Update current epoch for signal generator
+        current_epoch = epoch
+        
+        # Update curriculum learning parameters
+        curriculum_stats = curriculum.step(epoch)
+        
         signals, targets = generate_batch()
         signals, targets = signals.to(device), targets.to(device)
         optimizer.zero_grad()
@@ -88,14 +88,12 @@ def main() -> None:
             print(f"\nEarly stopping triggered after {epoch + 1} epochs!")
             break
             
-        # Update progress bar with current noise amplitude
-        current_amplitude = get_current_noise_amplitude(epoch)
-        noise_status = "off" if current_amplitude < config.signal.complex_noise.min_amplitude else f"{current_amplitude:.3f}"
+        # Update progress bar with curriculum stats
         pbar.set_postfix(
             loss=current_loss,
             best_loss=monitor.best_loss_value,
             patience=monitor.patience_counter,
-            noise=noise_status
+            **curriculum_stats
         )
         pbar.update(1)
             
