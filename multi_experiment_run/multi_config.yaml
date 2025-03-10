@@ -14,8 +14,8 @@ base_config:
   model:
     gradient_refinement:
       enabled: true
-      num_iterations: 3
-      step_size: 0.001
+      base_step_size: 0.001
+      max_iterations: 10
 
 experiments:
   - name: "simple_model_test"

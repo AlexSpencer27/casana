@@ -1,8 +1,8 @@
 model:
   gradient_refinement:
+    base_step_size: 0.001
     enabled: true
-    num_iterations: 3
-    step_size: 0.001
+    max_iterations: 10
   name: pinn_peak_detector
 signal:
   length: 512

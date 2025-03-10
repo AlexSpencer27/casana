@@ -32,9 +32,16 @@ class VisualizationConfig:
 
 @dataclass
 class GradientRefinementConfig:
+    """Configuration for gradient-based peak refinement.
+    
+    Attributes:
+        enabled: Whether to use gradient refinement
+        base_step_size: Base learning rate for gradient updates (default: 0.002)
+        max_iterations: Maximum number of refinement iterations (default: 7)
+    """
     enabled: bool = False
-    num_iterations: int = 3
-    step_size: float = 0.001
+    base_step_size: float = 0.002
+    max_iterations: int = 7
 
 
 @dataclass

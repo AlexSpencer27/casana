@@ -14,8 +14,8 @@ class BaseModel(nn.Module, ABC):
         if self.gradient_refinement_enabled:
             self.gradient_refiner = GradientRefinementModule(
                 signal_length=config.signal.length,
-                num_iterations=config.model.gradient_refinement.num_iterations,
-                step_size=config.model.gradient_refinement.step_size
+                base_step_size=config.model.gradient_refinement.base_step_size,
+                max_iterations=config.model.gradient_refinement.max_iterations
             )
     
     @abstractmethod
