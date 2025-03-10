@@ -32,8 +32,8 @@ def generate_signal(
     peak1_idx = int(p1_position * sampling_rate)
     peak2_idx = int(p2_position * sampling_rate)
 
-    peak1_width = np.clip(np.random.randint(10, 40), 10, peak1_idx-1)
-    peak2_width = np.clip(np.random.randint(10, 40), 10, (length-peak2_idx-1))
+    peak1_width = np.random.randint(10, 40)
+    peak2_width = np.random.randint(10, 40)
 
     # Add peaks with ramps
     signal[peak1_idx - peak1_width : peak1_idx + peak1_width] = p1_amplitude * np.hanning(peak1_width * 2)
