@@ -18,7 +18,7 @@ class SimplestPossible(BaseModel):
         self.dropout = nn.Dropout(0.2)    # Light regularization
         
         # Peak ordering layer
-        self.peak_ordering = PeakOrderingLayer(softness=0.1)
+        self.peak_ordering = PeakOrderingLayer()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Flatten the input

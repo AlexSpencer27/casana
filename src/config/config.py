@@ -23,6 +23,7 @@ class TrainingConfig:
 class SignalConfig:
     length: int = 2048
     sampling_rate: int = 1024
+    add_complex_signal: bool = True
 
 
 @dataclass

@@ -24,7 +24,7 @@ def plot_predictions(project_root: Path, signals: torch.Tensor, targets: torch.T
         fig = go.Figure()
         
         # Plot original signal
-        signal_data = signals[i].squeeze().numpy()
+        signal_data = signals[i].squeeze().cpu().numpy()
         x_values = list(range(len(signal_data)))
         fig.add_trace(go.Scatter(
             x=x_values,
@@ -35,8 +35,11 @@ def plot_predictions(project_root: Path, signals: torch.Tensor, targets: torch.T
         ))
         
         # Get target and predicted positions
-        target_positions = targets[i].numpy() * config.signal.length
-        predicted_pos = predictions[i].numpy() * config.signal.length
+        # Denormalize from [0,1] to sample indices
+        # The normalization was: time * sampling_rate / length
+        # So to denormalize: pos * length / sampling_rate * sampling_rate = pos * length
+        target_positions = targets[i].cpu().numpy() * config.signal.length
+        predicted_pos = predictions[i].cpu().numpy() * config.signal.length
         
         # Add target position lines
         for pos, style in zip(target_positions, ['-', '--', '-']):

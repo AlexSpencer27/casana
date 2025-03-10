@@ -80,6 +80,7 @@ def generate_batch() -> tuple[torch.Tensor, torch.Tensor]:
             p2_position=peak2_time,
             p1_amplitude=1.0,
             p2_amplitude=0.8,
+            add_complex_signal=config.signal.add_complex_signal,
         )
         signal = (signal - signal.mean()) / signal.std()
 

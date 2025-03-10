@@ -6,26 +6,15 @@ import torch
 import torch.nn as nn
 
 class PeakOrderingLayer(nn.Module):
-    def __init__(self, softness=0.1, min_separation=0.1):
+    def __init__(self):
         """
-        Ensure consistent ordering and valid ranges for peak outputs.
-        
-        This layer applies constraints to ensure:
-        1. All positions are in [0, 1] range (normalized)
-        2. peak1 < midpoint < peak2
-        3. Maintains minimum separation between peaks
-        
-        Args:
-            softness: Smoothness parameter for differentiable constraints (default: 0.1)
-            min_separation: Minimum separation between peaks in normalized space (default: 0.1)
+        Simple layer to ensure predictions are in valid range and compute midpoint.
         """
         super().__init__()
-        self.softness = softness
-        self.min_separation = min_separation
         
     def forward(self, x):
         """
-        Apply constraints to ensure valid peak positions.
+        Apply basic constraints to ensure valid peak positions.
         
         Args:
             x: Input tensor of shape [batch_size, 3] representing normalized positions
@@ -38,14 +27,10 @@ class PeakOrderingLayer(nn.Module):
         x = torch.clamp(x, 0.0, 1.0)
         
         # Extract peaks and midpoint
-        peak1, midpoint, peak2 = x.split(1, dim=1)
+        peak1, _, peak2 = x.split(1, dim=1)
         
-        # Ensure minimum separation between peaks
-        min_peak2 = peak1 + self.min_separation
-        peak2 = torch.maximum(peak2, min_peak2)
-        
-        # Recompute midpoint to ensure it's between peaks
-        midpoint = peak1 + (peak2 - peak1) * 0.5
+        # Compute midpoint as median between peaks
+        midpoint = (peak1 + peak2) * 0.5
         
         # Concatenate back to [batch_size, 3]
         x = torch.cat([peak1, midpoint, peak2], dim=1)
