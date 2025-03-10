@@ -84,10 +84,10 @@ class PINNPeakDetector(BaseModel):
         )
         
         # Attention for signal weighting based on expected peak regions
-        # We'll create two attention masks: one for early region (0.1-0.5) and one for late region (0.6-1.8)
+        # We'll create two attention masks: one for early region (0.05-0.25) and one for late region (0.3-0.9)
         time_points = torch.linspace(0, 1, self.signal_length)
-        early_mask = torch.exp(-((time_points - 0.3) / 0.1)**2)
-        late_mask = torch.exp(-((time_points - 1.0) / 0.3)**2)
+        early_mask = torch.exp(-((time_points - 0.15) / 0.1)**2)  # Centered at 0.15 (middle of 0.05-0.25)
+        late_mask = torch.exp(-((time_points - 0.6) / 0.3)**2)   # Centered at 0.6 (middle of 0.3-0.9)
         self.register_buffer('early_mask', early_mask)
         self.register_buffer('late_mask', late_mask)
         

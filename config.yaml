@@ -11,8 +11,8 @@ training:
   batch_size: 32
   early_stopping:
     min_delta: 0.0001
-    patience: 20
+    patience: 200
   learning_rate: 0.0001
-  num_epochs: 20
+  num_epochs: 2000
 visualization:
   num_predictions: 10
