@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 from typing import List, Optional
 import numpy as np
 import math
+from plotly.subplots import make_subplots
 
 from src.config.config import config
 
@@ -22,7 +23,25 @@ class TrainingMonitor:
         shutil.rmtree(self.save_dir, ignore_errors=True)
         self.save_dir.mkdir(exist_ok=True, parents=True)
         self.base_round = base_round
+        
+        # Track total loss
         self.losses: List[float] = []
+        
+        # Track individual loss components
+        self.position_losses: List[float] = []
+        self.magnitude_losses: List[float] = []
+        self.gradient_losses: List[float] = []
+        self.curvature_losses: List[float] = []
+        
+        # Track curriculum weights
+        self.position_weights: List[float] = []
+        self.magnitude_weights: List[float] = []
+        self.gradient_weights: List[float] = []
+        self.curvature_weights: List[float] = []
+        
+        # Track other curriculum components
+        self.learning_rates: List[float] = []
+        self.noise_amplitudes: List[float] = []
         
         # Early stopping variables
         self.best_loss = float('inf')  # For model saving
@@ -62,38 +81,67 @@ class TrainingMonitor:
         recent_losses = self.losses[-ma_window:]
         return float(sum(recent_losses) / ma_window)
     
-    def _calculate_moving_averages(self) -> np.ndarray:
+    def _calculate_moving_averages(self, values: List[float]) -> np.ndarray:
         """Calculate moving averages for all points for plotting.
         
+        Args:
+            values: List of values to calculate moving averages for
+            
         Returns:
             Array of moving averages
         """
         ma_window = self._get_ma_window()
-        if len(self.losses) < ma_window:
+        if len(values) < ma_window:
             return np.array([])
             
-        # Convert losses to numpy array
-        losses_array = np.array(self.losses)
+        # Convert values to numpy array
+        values_array = np.array(values)
         
         # Calculate moving averages using convolution
         weights = np.ones(ma_window) / ma_window
-        ma = np.convolve(losses_array, weights, mode='valid')
+        ma = np.convolve(values_array, weights, mode='valid')
         
         # Pad the beginning to match length
         padding = np.full(ma_window - 1, np.nan)
         return np.concatenate([padding, ma])
     
-    def update(self, loss: float, epoch: Optional[int] = None) -> bool:
-        """Update the monitor with a new loss value and check early stopping condition.
+    def update(self, loss: float, epoch: Optional[int] = None, loss_components: Optional[dict] = None, 
+              curriculum_weights: Optional[dict] = None, learning_rate: Optional[float] = None,
+              noise_amplitude: Optional[float] = None) -> bool:
+        """Update the monitor with new values and check early stopping condition.
         
         Args:
-            loss: The loss value to record
+            loss: The total loss value to record
             epoch: Current epoch number (optional)
+            loss_components: Dictionary containing individual loss components
+            curriculum_weights: Dictionary containing current curriculum weights
+            learning_rate: Current learning rate
+            noise_amplitude: Current noise amplitude
             
         Returns:
             bool: True if training should continue, False if early stopping triggered
         """
         self.losses.append(loss)
+        
+        # Update loss components if provided
+        if loss_components is not None:
+            self.position_losses.append(loss_components.get('position', 0.0))
+            self.magnitude_losses.append(loss_components.get('magnitude', 0.0))
+            self.gradient_losses.append(loss_components.get('gradient', 0.0))
+            self.curvature_losses.append(loss_components.get('curvature', 0.0))
+            
+        # Update curriculum weights if provided
+        if curriculum_weights is not None:
+            self.position_weights.append(curriculum_weights.get('position', 0.0))
+            self.magnitude_weights.append(curriculum_weights.get('magnitude', 0.0))
+            self.gradient_weights.append(curriculum_weights.get('gradient', 0.0))
+            self.curvature_weights.append(curriculum_weights.get('second_derivative', 0.0))
+            
+        # Update other curriculum components
+        if learning_rate is not None:
+            self.learning_rates.append(learning_rate)
+        if noise_amplitude is not None:
+            self.noise_amplitudes.append(noise_amplitude)
         
         # Update best point estimate loss (for model saving)
         if loss < self.best_loss - self.min_delta:
@@ -125,53 +173,231 @@ class TrainingMonitor:
         Args:
             filename: Name of the file to save the plot to
         """
-        fig = go.Figure()
+        # Define consistent component order and colors
+        COMPONENTS = [
+            ('Position', 'rgba(0, 0, 255, 0.75)', 'blue'),  # Blue
+            ('Magnitude', 'rgba(255, 0, 0, 0.75)', 'red'),  # Red
+            ('Gradient', 'rgba(0, 255, 0, 0.75)', 'green'),  # Green
+            ('Curvature', 'rgba(128, 128, 128, 0.75)', 'grey')  # Grey
+        ]
         
-        # Add individual loss points
-        fig.add_trace(go.Scatter(
-            y=self.losses,
-            mode='markers',
-            name='Loss',
-            marker=dict(
-                size=2,
-                color="blue",
-                opacity=0.2
+        # Create figure with 3 subplots
+        fig = make_subplots(
+            rows=3, cols=1,
+            subplot_titles=(
+                'Total Training Loss',
+                'Loss Components',
+                'Curriculum Components'
             ),
-            showlegend=True
-        ))
+            vertical_spacing=0.15,  # Reduced spacing
+            row_heights=[0.33, 0.33, 0.33]  # Equal heights
+        )
         
-        # Add moving average line
+        # Plot 1: Total Loss
+        # clip losses to 5th to 95th percentile
+        plot_losses = np.clip(self.losses, np.percentile(self.losses, 5), np.percentile(self.losses, 95))
+        # Add individual loss points
+        fig.add_trace(
+            go.Scatter(
+                y=plot_losses,
+                mode='markers',
+                name='Loss',
+                marker=dict(
+                    size=3,
+                    color="blue",
+                    opacity=0.8
+                ),
+                showlegend=True,
+                legendgroup="1",
+                legendgrouptitle_text="Total Loss"
+            ),
+            row=1, col=1
+        )
+        
+        # Add moving average line for total loss
         ma_window = self._get_ma_window()
         if len(self.losses) >= ma_window:
-            moving_averages = self._calculate_moving_averages()
+            moving_averages = self._calculate_moving_averages(self.losses)
             # Only plot non-NaN values
             valid_indices = ~np.isnan(moving_averages)
-            fig.add_trace(go.Scatter(
-                x=np.arange(len(moving_averages))[valid_indices],
-                y=moving_averages[valid_indices],
-                mode='lines',
-                name=f'{ma_window}-point Moving Average',
-                line=dict(
-                    color="blue",
-                    width=2
+            fig.add_trace(
+                go.Scatter(
+                    x=np.arange(len(moving_averages))[valid_indices],
+                    y=moving_averages[valid_indices],
+                    mode='lines',
+                    name=f'{ma_window}-point Moving Average',
+                    line=dict(
+                        color="blue",
+                        width=2
+                    ),
+                    showlegend=True,
+                    legendgroup="1"
                 ),
-                showlegend=True
-            ))
+                row=1, col=1
+            )
         
+        # Plot 2: Loss Components as stacked area
+        if self.position_losses:  # Only if we have component data
+            # Map components to their data
+            component_data = [
+                (self.position_losses, self.position_weights),
+                (self.magnitude_losses, self.magnitude_weights),
+                (self.gradient_losses, self.gradient_weights),
+                (self.curvature_losses, self.curvature_weights)
+            ]
+            
+            # Calculate weighted moving averages for all components
+            ma_values = []
+            for (losses, weights), (_, _, _) in zip(component_data, COMPONENTS):
+                # Calculate moving average of the weighted loss
+                weighted_losses = [loss * weight for loss, weight in zip(losses, weights)]
+                moving_avg = self._calculate_moving_averages(weighted_losses)
+                valid_indices = ~np.isnan(moving_avg)
+                ma_values.append(moving_avg[valid_indices])
+            
+            x_values = np.arange(len(ma_values[0]))
+            cumulative_values = np.zeros_like(ma_values[0])
+            
+            # Reverse both lists for bottom-to-top stacking
+            component_data = component_data[::-1]
+            components_rev = COMPONENTS[::-1]
+            ma_values = ma_values[::-1]
+            
+            # Create stacked area plot from bottom to top
+            for i, ((name, fill_color, _), values) in enumerate(zip(components_rev, ma_values)):
+                # Add current values to cumulative sum
+                new_cumulative = cumulative_values + values
+                
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_values,
+                        y=new_cumulative,
+                        mode='lines',
+                        fill='tonexty' if i > 0 else 'tozeroy',
+                        name=f'{name} Loss',
+                        line=dict(width=0),  # Hide the line
+                        fillcolor=fill_color,
+                        showlegend=True,
+                        legendgroup="2",
+                        legendgrouptitle_text="Loss Components"
+                    ),
+                    row=2, col=1
+                )
+                
+                cumulative_values = new_cumulative
+        
+        # Plot 3: Curriculum Components
+        if self.position_weights:  # Only if we have curriculum data
+            # Map components to their weight data
+            weight_data = [
+                (self.position_weights, 'Position'),
+                (self.magnitude_weights, 'Magnitude'),
+                (self.gradient_weights, 'Gradient'),
+                (self.curvature_weights, 'Curvature')
+            ]
+            
+            # Plot loss weights with thicker lines
+            for (weights, _), (name, _, line_color) in zip(weight_data, COMPONENTS):
+                fig.add_trace(
+                    go.Scatter(
+                        y=weights,
+                        mode='lines',
+                        name=f'{name} Weight',
+                        line=dict(color=line_color, width=2),  # Increased line width
+                        showlegend=True,
+                        legendgroup="3",
+                        legendgrouptitle_text="Curriculum Components"
+                    ),
+                    row=3, col=1
+                )
+            
+            # Add learning rate with distinct style
+            if self.learning_rates:
+                fig.add_trace(
+                    go.Scatter(
+                        y=self.learning_rates,
+                        mode='lines',
+                        name='Learning Rate',
+                        line=dict(
+                            color='orange',
+                            width=2,
+                            dash='dashdot'  # Changed to dashdot for better visibility
+                        ),
+                        showlegend=True,
+                        legendgroup="3"
+                    ),
+                    row=3, col=1
+                )
+            
+            # Add noise amplitude with distinct style
+            if self.noise_amplitudes:
+                fig.add_trace(
+                    go.Scatter(
+                        y=self.noise_amplitudes,
+                        mode='lines',
+                        name='Noise Amplitude',
+                        line=dict(
+                            color='purple',  # Changed to purple for better contrast
+                            width=2,
+                            dash='dot'
+                        ),
+                        showlegend=True,
+                        legendgroup="3"
+                    ),
+                    row=3, col=1
+                )
+        
+        # Update layout
         fig.update_layout(
-            title='Training Loss Over Time',
-            xaxis_title='Iteration',
-            yaxis_title='Loss',
-            yaxis_type='log',
+            title='Training Progress',
             template='plotly_white',
             showlegend=True,
-            width=1000,
-            height=600,
+            width=1200,  # Increased width to accommodate legends
+            height=1200,
             font=dict(size=14),
             # Remove gridlines
             xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=False)
+            yaxis=dict(showgrid=False),
+            # Center legends vertically beside each subplot
+            legend1=dict(
+                yanchor="middle",
+                y=0.85,  # Centered with first subplot
+                xanchor="left",
+                x=1.02
+            ),
+            legend2=dict(
+                yanchor="middle",
+                y=0.5,  # Centered with second subplot
+                xanchor="left",
+                x=1.02
+            ),
+            legend3=dict(
+                yanchor="middle",
+                y=0.15,  # Centered with third subplot
+                xanchor="left",
+                x=1.02
+            )
         )
+        
+        # Update axes formatting
+        # Update y-axes to log scale for curriculum weights only with better tick formatting
+        fig.update_yaxes(
+            type="log",
+            row=3,
+            col=1,
+            tickformat=".0e",  # Scientific notation
+            dtick=1,  # Log tick spacing
+            showgrid=True,  # Show grid for log scale
+            gridcolor='rgba(0,0,0,0.1)'  # Light grid
+        )
+        
+        # Update x-axes labels
+        fig.update_xaxes(title_text="Iteration", row=3, col=1)
+        
+        # Update y-axes labels
+        fig.update_yaxes(title_text="Loss", row=1, col=1)
+        fig.update_yaxes(title_text="Component Loss", row=2, col=1)
+        fig.update_yaxes(title_text="Value", row=3, col=1)
         
         fig.write_image(str(self.save_dir / filename))
     

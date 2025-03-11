@@ -1,3 +1,25 @@
+curriculum:
+  complex_noise:
+    end_amplitude: 0.2
+    epochs_to_max: 10000
+    min_amplitude: 0.05
+    start_amplitude: 0.05
+  learning_rate:
+    end: 1.0e-06
+    epochs_to_min: 10000
+    start: 1.0e-03
+  loss_weights:
+    epochs_to_final: 100000
+    final:
+      gradient: 1.0e-03
+      magnitude: 0.01
+      position: 1.0
+      second_derivative: 1.0e-03
+    start:
+      gradient: 1.0e-03
+      magnitude: 0.01
+      position: 1.0
+      second_derivative: 1.0e-03
 loss:
   name: gradient_aware
 model:
@@ -9,34 +31,12 @@ model:
 signal:
   length: 2048
   sampling_rate: 1024
-curriculum:
-  complex_noise:
-    start_amplitude: 0.0    # Start with no noise
-    end_amplitude: 0.2      # Maximum noise amplitude
-    min_amplitude: 0.05     # Minimum threshold for adding noise
-    epochs_to_max: 10000    # Number of epochs to reach maximum amplitude
-  learning_rate:
-    start: 5.0e-5          # Initial learning rate
-    end: 1.0e-6            # Final learning rate
-    epochs_to_min: 50000    # Epochs to reach minimum learning rate
-  loss_weights:
-    start:                  # Initial loss weights
-      position: 100.0
-      magnitude: 1.0
-      gradient: 1.0e-8
-      second_derivative: 1.0e-4
-    final:                  # Final loss weight values
-      position: 100.0
-      magnitude: 1.0
-      gradient: 1.0e-6
-      second_derivative: 1.0e-2
-    epochs_to_final: 20000  # Epochs to reach final weights
 training:
-  batch_size: 32
+  batch_size: 128
   early_stopping:
     min_delta: 0.0001
-    patience: 1000
-  num_epochs: 100
+    patience: 10000
+  num_epochs: 1000
 visualization:
   num_predictions: 10
-  plot_frequency: 50
+  plot_frequency: 10

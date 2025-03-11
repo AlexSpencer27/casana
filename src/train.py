@@ -77,14 +77,53 @@ def main() -> None:
         signals, targets = signals.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = model(signals)
-        loss = criterion(outputs, targets, signals)
+        
+        # Get individual loss components
+        position_loss, magnitude_loss = criterion.compute_position_and_magnitude_losses(outputs, targets, signals)
+        
+        # Get gradient losses for peaks only (indices 0 and 2)
+        peak_positions = torch.cat([outputs[:, 0:1], outputs[:, 2:]], dim=1)
+        first_deriv, second_deriv = criterion.compute_gradients(signals, peak_positions)
+        gradient_loss = torch.mean(first_deriv ** 2)
+        curvature_loss = -torch.mean(second_deriv)  # Negative because we want to maximize negative curvature
+        
+        # Calculate total loss
+        loss = (
+            config.loss.position_weight * position_loss +
+            config.loss.magnitude_weight * magnitude_loss +
+            config.loss.gradient_weight * gradient_loss +
+            config.loss.second_derivative_weight * curvature_loss
+        )
+        
         loss.backward()
         optimizer.step()
         
         current_loss = loss.item()
         
+        # Prepare loss components and curriculum weights for monitor
+        loss_components = {
+            'position': position_loss.item(),
+            'magnitude': magnitude_loss.item(),
+            'gradient': gradient_loss.item(),
+            'curvature': curvature_loss.item()
+        }
+        
+        curriculum_weights = {
+            'position': config.loss.position_weight,
+            'magnitude': config.loss.magnitude_weight,
+            'gradient': config.loss.gradient_weight,
+            'second_derivative': config.loss.second_derivative_weight
+        }
+        
         # Update monitor and check early stopping
-        if not monitor.update(current_loss, epoch):
+        if not monitor.update(
+            current_loss, 
+            epoch, 
+            loss_components, 
+            curriculum_weights,
+            learning_rate=optimizer.param_groups[0]['lr'],
+            noise_amplitude=curriculum.get_noise_amplitude(epoch)
+        ):
             print(f"\nEarly stopping triggered after {epoch + 1} epochs!")
             break
             
