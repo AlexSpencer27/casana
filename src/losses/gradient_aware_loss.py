@@ -21,12 +21,6 @@ class GradientAwareLoss(BaseLoss):
         # This gives us a good balance between local behavior and numerical stability
         # Convert to normalized coordinates by dividing by signal length
         self.step_size = (10.0 / 4.0) / config.signal.length
-        
-        # For a Hanning window of width w, second derivative at peak is approximately -2π²/T²
-        # where T is the period (2*width). For our minimum width of 10 samples, this gives:
-        # -2π²/(20)² ≈ -0.05 in normalized coordinates
-        # We want curvature to be at least this negative at peaks
-        self.target_curvature = -0.05
     
     def sample_signal_values(self, signals: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
         """Sample signal values at given positions using linear interpolation.

@@ -5,20 +5,17 @@ import torch.nn.functional as F
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
-from src.models.components import MultiScaleCNNBranch, SkipConnectionMLP, BoundedPeakOutput, AdaptiveFeaturePooling
 
 @register_model("multi_scale_conv1d")
 class MultiScaleConv1D(BaseModel):
     def __init__(self) -> None:
         super().__init__()
         
-        # Multi-scale convolution using component
-        self.multi_scale_branch = MultiScaleCNNBranch(
-            in_channels=1,
-            channels_per_kernel=16,
-            kernel_sizes=(7, 15, 31),
-            pooling='max'
-        )
+        # Multi-scale convolution layers
+        self.conv1_small = nn.Conv1d(1, 16, kernel_size=7, padding=3)
+        self.conv1_medium = nn.Conv1d(1, 16, kernel_size=15, padding=7)
+        self.conv1_large = nn.Conv1d(1, 16, kernel_size=31, padding=15)
+        self.pool1 = nn.MaxPool1d(2)
         
         # Second convolution layer after concatenation
         self.conv2 = nn.Conv1d(48, 64, kernel_size=9, padding=4)
@@ -28,27 +25,30 @@ class MultiScaleConv1D(BaseModel):
         self.conv3 = nn.Conv1d(64, 64, kernel_size=5, padding=2)
         
         # Adaptive pooling to fix output size
-        self.adaptive_pool = AdaptiveFeaturePooling(output_size=16, pooling_type='avg')
+        self.adaptive_pool = nn.AdaptiveAvgPool1d(16)
         
-        # Fully connected layers with skip connection using component
-        self.fc_block = SkipConnectionMLP(
-            input_dim=64 * 16,
-            hidden_dim=256,
-            output_dim=64,
-            dropout_rate=0.3
-        )
-        
-        # Output layer
+        # Fully connected layers with skip connection
+        self.fc1 = nn.Linear(64 * 16, 256)
+        self.fc2 = nn.Linear(256, 64)
+        self.fc_skip = nn.Linear(64 * 16, 64)  # Skip connection
         self.output = nn.Linear(64, 3)
         
-        # Peak output layer
-        self.peak_output = BoundedPeakOutput()
+        # Regularization
+        self.dropout = nn.Dropout(0.3)
+        self.bn1 = nn.BatchNorm1d(256)
+        self.bn2 = nn.BatchNorm1d(64)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
         
-        # Multi-scale time domain processing using component
-        x = self.multi_scale_branch(x)
+        # Multi-scale time domain processing
+        t_small = self.conv1_small(x)
+        t_medium = self.conv1_medium(x)
+        t_large = self.conv1_large(x)
+        
+        # Concatenate multi-scale features
+        x = torch.cat([t_small, t_medium, t_large], dim=1)
+        x = self.pool1(x)
         
         # Second convolution block
         x = F.relu(self.conv2(x))
@@ -61,13 +61,25 @@ class MultiScaleConv1D(BaseModel):
         # Flatten features
         x = x.view(batch_size, -1)
         
-        # Process through FC layers with skip connection
-        x = self.fc_block(x)
+        # Main path through FC layers
+        main = F.relu(self.bn1(self.fc1(x)))
+        main = self.dropout(main)
+        main = F.relu(self.bn2(self.fc2(main)))
+        
+        # Skip connection
+        skip = F.relu(self.fc_skip(x))
+        
+        # Combine main path and skip connection
+        x = main + skip
+        x = self.dropout(x)
         
         # Output layer
         x = self.output(x)
         
-        # Apply bounded peak output layer
-        x = self.peak_output(x)
+        # Squash output to 0-1 range
+        x = torch.sigmoid(x)
         
         return x 
+        
+        
+        

@@ -3,6 +3,17 @@ import torch
 
 from src.config.config import config
 
+# Global noise scale that can be set by curriculum
+_current_noise_scale = None
+
+def set_noise_scale(scale: float) -> None:
+    """Set the current noise scale for signal generation.
+    
+    Args:
+        scale: The noise scale to use for signal generation
+    """
+    global _current_noise_scale
+    _current_noise_scale = scale
 
 def generate_signal(
     p1_position: float,
@@ -19,7 +30,7 @@ def generate_signal(
         p1_amplitude: Amplitude of the first peak (default: 1.0)
         p2_amplitude: Amplitude of the second peak (default: 0.8)
         noise_scale: Optional scaling factor for noise amplitude (default: None)
-                    If None, uses maximum noise amplitude for evaluation
+                    If None, uses global _current_noise_scale or maximum noise for evaluation
 
     Returns:
         torch.Tensor: The generated signal
@@ -40,8 +51,10 @@ def generate_signal(
     signal[peak1_idx - peak1_width : peak1_idx + peak1_width] = p1_amplitude * np.hanning(peak1_width * 2)
     signal[peak2_idx - peak2_width : peak2_idx + peak2_width] = p2_amplitude * np.hanning(peak2_width * 2)
 
-    # For evaluation, use maximum noise amplitude if noise_scale is None
-    current_noise_scale = config.curriculum.complex_noise.end_amplitude if noise_scale is None else noise_scale
+    # Use provided noise_scale, global _current_noise_scale, or maximum noise amplitude
+    current_noise_scale = noise_scale if noise_scale is not None else \
+                         _current_noise_scale if _current_noise_scale is not None else \
+                         config.curriculum.complex_noise.end_amplitude
 
     # Add complex noise signal if amplitude is above minimum threshold
     if current_noise_scale >= config.curriculum.complex_noise.min_amplitude:
@@ -89,8 +102,9 @@ def generate_batch() -> tuple[torch.Tensor, torch.Tensor]:
             p1_amplitude=1.0,
             p2_amplitude=0.8,
         )
-        signal = (signal - signal.mean()) / signal.std()
-
+        # Scale to [-1, 1] range using fixed scaling based on expected peak amplitude
+        signal = signal / 1.0  
+        
         # Calculate normalized sample positions (0-1 range)
         peak1_sample = peak1_time * sampling_rate / length
         peak2_sample = peak2_time * sampling_rate / length

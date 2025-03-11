@@ -52,7 +52,7 @@ class ModelConfig:
 
 @dataclass
 class LossConfig:
-    name: str = "simple_mse"
+    name: str = "gradient_aware"
     # Weights will be initialized from curriculum and updated during training
     position_weight: float = 100.0
     magnitude_weight: float = 1.0

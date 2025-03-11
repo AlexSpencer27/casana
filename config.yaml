@@ -1,42 +1,42 @@
 curriculum:
   complex_noise:
-    end_amplitude: 0.2
+    end_amplitude: 0.0
     epochs_to_max: 10000
     min_amplitude: 0.05
-    start_amplitude: 0.05
+    start_amplitude: 0.00
   learning_rate:
     end: 1.0e-06
     epochs_to_min: 10000
-    start: 1.0e-03
+    start: 1.0e-06
   loss_weights:
     epochs_to_final: 100000
     final:
-      gradient: 1.0e-03
-      magnitude: 0.01
-      position: 1.0
-      second_derivative: 1.0e-03
+      gradient: 1.0e-10 #1.0e-05
+      magnitude: 1.0e-10 #0.01
+      position: 10.0
+      second_derivative: 1.0e-10 #1.0e-03
     start:
-      gradient: 1.0e-03
-      magnitude: 0.01
-      position: 1.0
-      second_derivative: 1.0e-03
+      gradient: 1.0e-10 #1.0e-05
+      magnitude: 1.0e-10 #0.01
+      position: 10.0
+      second_derivative: 1.0e-10 #1.0e-03
 loss:
-  name: gradient_aware
+  name: simple_mse
 model:
   gradient_refinement:
     base_step_size: 0.001
-    enabled: true
+    enabled: false
     max_iterations: 10
   name: multi_scale_conv1d
 signal:
   length: 2048
   sampling_rate: 1024
 training:
-  batch_size: 128
+  batch_size: 32
   early_stopping:
     min_delta: 0.0001
-    patience: 10000
-  num_epochs: 1000
+    patience: 1000
+  num_epochs: 100000
 visualization:
   num_predictions: 10
-  plot_frequency: 10
+  plot_frequency: 100

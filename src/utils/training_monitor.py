@@ -5,9 +5,12 @@ from typing import List, Optional
 import numpy as np
 import math
 from plotly.subplots import make_subplots
+import torch
 
 from src.config.config import config
-
+from src.losses import get_loss
+from src.losses.gradient_aware_loss import GradientAwareLoss
+from src.losses.simple_mse import SimpleMSELoss
 
 class TrainingMonitor:
     """A class to monitor and visualize training progress."""
@@ -43,6 +46,10 @@ class TrainingMonitor:
         self.learning_rates: List[float] = []
         self.noise_amplitudes: List[float] = []
         
+        # Store most recent outputs and targets
+        self.recent_outputs: Optional[torch.Tensor] = None
+        self.recent_targets: Optional[torch.Tensor] = None
+        
         # Early stopping variables
         self.best_loss = float('inf')  # For model saving
         self.best_ma_loss = float('inf')  # For early stopping
@@ -52,6 +59,10 @@ class TrainingMonitor:
         
         # Create save directory if it doesn't exist
         self.save_dir.mkdir(exist_ok=True)
+        
+        # Get loss function for component computation
+        loss_class = get_loss(config.loss.name)
+        self.criterion = loss_class()
     
     def _get_ma_window(self) -> int:
         """Calculate moving average window size based on current number of points.
@@ -181,16 +192,17 @@ class TrainingMonitor:
             ('Curvature', 'rgba(128, 128, 128, 0.75)', 'grey')  # Grey
         ]
         
-        # Create figure with 3 subplots
+        # Create figure with 4 subplots
         fig = make_subplots(
-            rows=3, cols=1,
+            rows=4, cols=1,
             subplot_titles=(
                 'Total Training Loss',
                 'Loss Components',
-                'Curriculum Components'
+                'Curriculum Components',
+                'Current Predictions vs Targets'
             ),
             vertical_spacing=0.15,  # Reduced spacing
-            row_heights=[0.33, 0.33, 0.33]  # Equal heights
+            row_heights=[0.25, 0.25, 0.25, 0.25]  # Equal heights
         )
         
         # Plot 1: Total Loss
@@ -346,6 +358,52 @@ class TrainingMonitor:
                     ),
                     row=3, col=1
                 )
+            
+            # Plot 4: Scatter plot of outputs vs targets
+            if self.recent_outputs is not None and self.recent_targets is not None:
+                # Extract peak1, midpoint, peak2 from outputs and targets
+                peak1_out, midpoint_out, peak2_out = self.recent_outputs[:, 0], self.recent_outputs[:, 1], self.recent_outputs[:, 2]
+                peak1_target, midpoint_target, peak2_target = self.recent_targets[:, 0], self.recent_targets[:, 1], self.recent_targets[:, 2]
+                
+                # Add scatter plots for each component
+                fig.add_trace(
+                    go.Scatter(
+                        x=peak1_target,
+                        y=peak1_out,
+                        mode='markers',
+                        name='Peak 1',
+                        marker=dict(color='blue', size=8),
+                        showlegend=True,
+                        legendgroup="4"
+                    ),
+                    row=4, col=1
+                )
+                
+                fig.add_trace(
+                    go.Scatter(
+                        x=midpoint_target,
+                        y=midpoint_out,
+                        mode='markers',
+                        name='Midpoint',
+                        marker=dict(color='red', size=8),
+                        showlegend=True,
+                        legendgroup="4"
+                    ),
+                    row=4, col=1
+                )
+                
+                fig.add_trace(
+                    go.Scatter(
+                        x=peak2_target,
+                        y=peak2_out,
+                        mode='markers',
+                        name='Peak 2',
+                        marker=dict(color='green', size=8),
+                        showlegend=True,
+                        legendgroup="4"
+                    ),
+                    row=4, col=1
+                )
         
         # Update layout
         fig.update_layout(
@@ -353,7 +411,7 @@ class TrainingMonitor:
             template='plotly_white',
             showlegend=True,
             width=1200,  # Increased width to accommodate legends
-            height=1200,
+            height=1600,  # Increased height for 4 subplots
             font=dict(size=14),
             # Remove gridlines
             xaxis=dict(showgrid=False),
@@ -367,13 +425,19 @@ class TrainingMonitor:
             ),
             legend2=dict(
                 yanchor="middle",
-                y=0.5,  # Centered with second subplot
+                y=0.60,  # Centered with second subplot
                 xanchor="left",
                 x=1.02
             ),
             legend3=dict(
                 yanchor="middle",
-                y=0.15,  # Centered with third subplot
+                y=0.35,  # Centered with third subplot
+                xanchor="left",
+                x=1.02
+            ),
+            legend4=dict(
+                yanchor="middle",
+                y=0.10,  # Centered with fourth subplot
                 xanchor="left",
                 x=1.02
             )
@@ -393,11 +457,13 @@ class TrainingMonitor:
         
         # Update x-axes labels
         fig.update_xaxes(title_text="Iteration", row=3, col=1)
+        fig.update_xaxes(title_text="Target Position", row=4, col=1)
         
         # Update y-axes labels
         fig.update_yaxes(title_text="Loss", row=1, col=1)
         fig.update_yaxes(title_text="Component Loss", row=2, col=1)
         fig.update_yaxes(title_text="Value", row=3, col=1)
+        fig.update_yaxes(title_text="Predicted Position", row=4, col=1)
         
         fig.write_image(str(self.save_dir / filename))
     
@@ -427,3 +493,46 @@ class TrainingMonitor:
             float: Best loss value
         """
         return self.best_loss 
+
+    def compute_loss_components(self, outputs: torch.Tensor, targets: torch.Tensor, signals: torch.Tensor) -> tuple[dict, dict]:
+        """Compute individual loss components and get current curriculum weights.
+        
+        Args:
+            outputs: Model outputs (batch_size, 3)
+            targets: Ground truth targets (batch_size, 3)
+            signals: Input signals (batch_size, 1, signal_length)
+            
+        Returns:
+            Tuple of (loss_components, curriculum_weights) dictionaries
+        """
+        # Store recent outputs and targets
+        self.recent_outputs = outputs.detach().cpu()
+        self.recent_targets = targets.detach().cpu()
+        
+        with torch.no_grad():
+            position_loss, magnitude_loss = self.criterion.compute_position_and_magnitude_losses(outputs, targets, signals)
+            # only do if gradient_aware loss
+            if isinstance(self.criterion, GradientAwareLoss):
+                peak_positions = torch.cat([outputs[:, 0:1], outputs[:, 2:]], dim=1)
+                first_deriv, second_deriv = self.criterion.compute_gradients(signals, peak_positions)
+                gradient_loss = torch.mean(first_deriv ** 2)
+                curvature_loss = -torch.mean(second_deriv)
+            else:
+                gradient_loss = torch.tensor(0.0)
+                curvature_loss = torch.tensor(0.0)
+        
+        loss_components = {
+            'position': position_loss.item(),
+            'magnitude': magnitude_loss.item(),
+            'gradient': gradient_loss.item(),
+            'curvature': curvature_loss.item()
+        }
+        
+        curriculum_weights = {
+            'position': config.loss.position_weight,
+            'magnitude': config.loss.magnitude_weight,
+            'gradient': config.loss.gradient_weight,
+            'second_derivative': config.loss.second_derivative_weight
+        }
+        
+        return loss_components, curriculum_weights 

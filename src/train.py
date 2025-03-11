@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from src.config.config import config
-from src.utils.signal_generator import generate_batch, generate_signal
+from src.utils.signal_generator import generate_batch, set_noise_scale
 from src.models import get_model
 from src.losses import get_loss
 from src.utils.experiment_tracker import ExperimentTracker
@@ -21,7 +21,7 @@ from src.utils.curriculum import CurriculumManager
 
 def main() -> None:
     # Enable anomaly detection right at the start
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
     
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -51,69 +51,36 @@ def main() -> None:
     optimizer = optim.Adam(model.parameters(), lr=config.curriculum.learning_rate.start)
     curriculum = CurriculumManager(optimizer)
 
-    # Store current epoch for signal generator
-    current_epoch = 0
-
-    # Monkey patch the generate_signal function to use curriculum learning
-    original_generate_signal = generate_signal
-    def curriculum_generate_signal(*args, **kwargs):
-        # Add current noise amplitude to signal generation
-        kwargs['noise_scale'] = curriculum.get_noise_amplitude(current_epoch)
-        return original_generate_signal(*args, **kwargs)
-    
-    import src.utils.signal_generator
-    src.utils.signal_generator.generate_signal = curriculum_generate_signal
-
     # training loop
     pbar = tqdm(range(config.training.num_epochs), desc="Training")
     for epoch in range(config.training.num_epochs):
-        # Update current epoch for signal generator
-        current_epoch = epoch
         
-        # Update curriculum learning parameters
+        # Update curriculum learning parameters and noise scale
         curriculum_stats = curriculum.step(epoch)
+        set_noise_scale(curriculum.get_noise_amplitude(epoch))
         
         signals, targets = generate_batch()
         signals, targets = signals.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = model(signals)
+
+        # DEBUG
+        # print(f"epoch: {epoch}")
+        # print(f"outputs: {outputs[:10]}")
+        # print(f"targets: {targets[:10]}")
         
-        # Get individual loss components
-        position_loss, magnitude_loss = criterion.compute_position_and_magnitude_losses(outputs, targets, signals)
-        
-        # Get gradient losses for peaks only (indices 0 and 2)
-        peak_positions = torch.cat([outputs[:, 0:1], outputs[:, 2:]], dim=1)
-        first_deriv, second_deriv = criterion.compute_gradients(signals, peak_positions)
-        gradient_loss = torch.mean(first_deriv ** 2)
-        curvature_loss = -torch.mean(second_deriv)  # Negative because we want to maximize negative curvature
-        
-        # Calculate total loss
-        loss = (
-            config.loss.position_weight * position_loss +
-            config.loss.magnitude_weight * magnitude_loss +
-            config.loss.gradient_weight * gradient_loss +
-            config.loss.second_derivative_weight * curvature_loss
-        )
+        # Use the loss function properly through its forward method
+        loss = criterion(outputs, targets, signals)
         
         loss.backward()
+        # add gradient clipping
+        # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
         
         current_loss = loss.item()
         
-        # Prepare loss components and curriculum weights for monitor
-        loss_components = {
-            'position': position_loss.item(),
-            'magnitude': magnitude_loss.item(),
-            'gradient': gradient_loss.item(),
-            'curvature': curvature_loss.item()
-        }
-        
-        curriculum_weights = {
-            'position': config.loss.position_weight,
-            'magnitude': config.loss.magnitude_weight,
-            'gradient': config.loss.gradient_weight,
-            'second_derivative': config.loss.second_derivative_weight
-        }
+        # Get loss components and weights from monitor
+        loss_components, curriculum_weights = monitor.compute_loss_components(outputs, targets, signals)
         
         # Update monitor and check early stopping
         if not monitor.update(
@@ -137,9 +104,6 @@ def main() -> None:
         pbar.update(1)
             
     pbar.close()
-    
-    # Restore original generate_signal function
-    src.utils.signal_generator.generate_signal = original_generate_signal
             
     # Save final loss plot
     monitor.save_final_plot()
