@@ -1,69 +1,64 @@
-# Gradient Refinement Module
+# Gradient Refinement
+
+TL;DR: "Trust me, that peak is *slightly* to the left... 🎯"
 
 ## Overview
-The Gradient Refinement Module is a focused component that uses gradient-based optimization to refine peak positions. It implements an efficient refinement process using gradient and curvature information to achieve precise peak localization.
+A physics-informed module that refines peak predictions using signal gradients and curvature information. Uses iterative optimization to find the most precise peak locations.
 
 ## Architecture
 
-### Key Components
-1. **Signal Sampling**
+### Core Components
+1. Position Sampling
    - Linear interpolation
+   - Sub-pixel precision
    - Boundary handling
-   - Normalized position mapping
 
-2. **Gradient Computation**
-   - Central difference approximation
-   - First derivative calculation
-   - Second derivative (curvature) calculation
-   - Fixed step size
-   - Safe boundary handling
+2. Gradient Analysis
+   - Central difference gradients
+   - Curvature computation
+   - Finite difference approximations
 
-3. **Position Refinement**
-   - Per-peak convergence tracking
-   - Independent peak updates
-   - Midpoint maintenance
-   - Position bounds enforcement
-   - Proper peak ordering
-
-### Data Flow
-1. Input signal and initial positions
-2. Gradient and curvature computation
-3. Independent peak refinement
-4. Convergence tracking per peak
-5. Return refined positions
+3. Iterative Refinement
+   - Newton's method optimization
+   - Adaptive step sizing
+   - Position clamping
 
 ## Technical Details
 
-### Module Parameters
-- Signal length: configurable
-- Base step size: 0.002
-- Maximum iterations: 50
-- Convergence threshold: 1e-4
-- Derivative step: 0.01
+### Input/Output Specifications
+- Input: 
+  - Initial predictions: `[batch_size, 3]`
+  - Signals: `[batch_size, signal_length]`
+- Output: Refined predictions `[batch_size, 3]`
 
-### Key Features
-- Independent peak refinement
-- Per-peak convergence tracking
-- Gradient-based optimization
-- Safe boundary handling
-- Proper peak ordering
+### Key Parameters
+- Base step size: 0.002
+- Maximum iterations: 7
+- Epsilon (finite difference): 0.01
+- Position range: [0, 1]
 
 ## Implementation Notes
-- Uses PyTorch's nn.Module
-- Efficient tensor operations
-- Simple gradient descent
-- Convergence-based termination
-- Memory efficient
+
+### Dependencies
+- PyTorch
+- No external components required
+
+### Integration Guidelines
+1. Signals should be normalized
+2. Initial predictions should be in [0, 1] range
+3. Can handle both 2D and 3D input signals
+4. Automatically handles batch processing
 
 ## Advantages
-- Focused peak localization
-- Simple and efficient
-- Clear convergence criteria
-- Independent peak refinement
-- Minimal parameter tuning
+- Physics-informed refinement
+- Sub-pixel precision
+- Numerically stable
+- Batch-optimized implementation
+- Automatic boundary handling
 
 ## Use Cases
-- Peak position refinement
-- Local maxima detection
-- Signal feature localization
-- Pattern detection 
+- Fine-tuning peak locations
+- Improving model predictions
+- Signal extrema detection
+- High-precision localization
+- Post-processing refinement 

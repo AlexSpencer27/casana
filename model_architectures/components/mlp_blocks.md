@@ -1,75 +1,73 @@
-# MLP Blocks Component
+# MLP Blocks
+
+TL;DR: "I'm just a bunch of neurons doing honest work! 🧱"
 
 ## Overview
-The MLP Blocks component provides flexible and efficient implementations of Multi-Layer Perceptron architectures. It includes two main variants: SkipConnectionMLP with residual connections and ProgressiveMLP with configurable layer dimensions.
+A collection of Multi-Layer Perceptron (MLP) building blocks with various architectures, including skip connections and progressive layouts. Designed for flexibility and performance.
 
 ## Architecture
 
-### Key Components
-1. **SkipConnectionMLP**
-   - Residual connections
-   - Two-layer main path
-   - Parallel skip connection
-   - Batch normalization option
-   - Dropout regularization
-
-2. **ProgressiveMLP**
-   - Configurable layer dimensions
-   - Progressive layer structure
+### Core Components
+1. Skip Connection MLP
+   - Main path with two layers
+   - Skip connection path
    - Optional batch normalization
    - Dropout regularization
-   - ReLU activation
 
-### Data Flow
-1. **SkipConnectionMLP**
-   - Input → Main path (FC1 → BN → ReLU → Dropout → FC2 → BN → ReLU)
-   - Input → Skip path (FC_skip → ReLU)
-   - Combine paths → Dropout
+2. Progressive MLP
+   - Variable depth architecture
+   - Configurable layer dimensions
+   - Optional batch normalization
+   - Progressive dropout
 
-2. **ProgressiveMLP**
-   - Input → Layer1 → BN → ReLU → Dropout
-   - → Layer2 → BN → ReLU → Dropout
-   - → ... → LayerN (no BN/ReLU)
+### Common Features
+- ReLU activations
+- Batch normalization (optional)
+- Dropout regularization
+- Residual connections
 
 ## Technical Details
 
-### Module Parameters
-#### SkipConnectionMLP
-- Input dimension: configurable
-- Hidden dimension: configurable
-- Output dimension: configurable
-- Dropout rate: 0.3 (default)
-- Batch normalization: optional
+### Input/Output Specifications
+Skip Connection MLP:
+- Input: `[batch_size, input_dim]`
+- Hidden: `[batch_size, hidden_dim]`
+- Output: `[batch_size, output_dim]`
 
-#### ProgressiveMLP
-- Layer dimensions: configurable list
-- Dropout rate: 0.3 (default)
-- Batch normalization: optional
+Progressive MLP:
+- Input: `[batch_size, layer_dims[0]]`
+- Output: `[batch_size, layer_dims[-1]]`
 
-### Key Features
-- Residual connections
-- Batch normalization
-- Dropout regularization
-- Flexible architecture
-- Efficient computation
+### Key Parameters
+- Default dropout rate: 0.3
+- Batch normalization: True by default
+- Configurable dimensions
+- Flexible layer depths
 
 ## Implementation Notes
-- Uses PyTorch's nn.Module
-- Efficient tensor operations
-- Clean interface
-- Memory efficient
-- Flexible configuration
+
+### Dependencies
+- PyTorch
+- torch.nn.functional
+
+### Integration Guidelines
+1. Choose appropriate architecture:
+   - Skip Connection: For residual learning
+   - Progressive: For deep architectures
+2. Configure batch normalization based on needs
+3. Adjust dropout rate for regularization
+4. Set dimensions based on feature sizes
 
 ## Advantages
-- Improved gradient flow
-- Better training stability
-- Flexible architecture
-- Easy to integrate
-- Memory efficient
+- Flexible architectures
+- Strong regularization
+- Residual learning support
+- Configurable depth
+- Easy integration
 
 ## Use Cases
-- Feature processing
-- Dimensionality reduction
-- Pattern recognition
-- Feature fusion
-- Classification tasks 
+- Feature transformation
+- Deep representation learning
+- Classification heads
+- Embedding generation
+- Signal processing 

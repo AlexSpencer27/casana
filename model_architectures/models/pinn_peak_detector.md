@@ -1,94 +1,64 @@
-# PINN Peak Detector Model
+# PINN Peak Detector
 
-> TL;DR: The physicist's neural network - it doesn't just learn patterns, it understands the physics behind them, using template matching and region-specific processing to find peaks with scientific precision.
+TL;DR: "I'm the physics nerd who actually reads the textbooks. And yes, I'll tell you why your peaks are wrong! 🤓"
 
 ## Overview
-The Physics-Informed Neural Network (PINN) Peak Detector is a specialized architecture that combines neural network processing with physics-based constraints. It uses template matching, spectral analysis, and region-specific processing to achieve accurate peak detection while respecting physical constraints.
+A Physics-Informed Neural Network (PINN) that incorporates domain knowledge through Hanning template matching, spectral analysis, and gradient-based refinement. Specializes in early and late region peak detection.
 
 ## Architecture
 
-### Key Components
-1. **Region-Specific Networks**
-   - Early region network (0.05-0.25 signal range)
-   - Late region network (0.3-0.9 signal range)
-   - Each with 256 → 64 hidden dimensions
-   - Dropout rate: 0.2
+### Core Components
+1. Region-Specific Networks
+   - Early region network (first peak)
+   - Late region network (second peak)
+   - Attention masks for region focus
 
-2. **Hanning Template Layer**
-   - Custom layer for template matching
-   - Width range: 10-40 samples
-   - 4 different template widths
+2. Hanning Template Matching
+   - Multiple template widths (10-40)
    - Learnable template weights
-   - FFT-based correlation computation
+   - FFT-based efficient correlation
 
-3. **Spectral Analysis**
-   - FFT-based spectral processing
-   - Feature dimension: 64
-   - Windowed processing
-   - Magnitude spectrum analysis
+3. Spectral Analysis
+   - Frequency domain processing
+   - Feature extraction from spectra
+   - Integration with time domain features
 
-4. **Attention Masks**
-   - Early region mask (centered at 0.15)
-   - Late region mask (centered at 0.6)
-   - Gaussian weighting
-   - Region-specific feature extraction
-
-5. **Feature Fusion**
-   - Concatenation of all features
-   - 128 → 64 hidden dimensions
-   - Dropout rate: 0.3
-   - Final output layer (3 values)
-
-### Data Flow
-1. Input signal processes through multiple paths:
-   - Early region: Masked input → Early network
-   - Late region: Masked input → Late network
-   - Template matching: Hanning templates → Correlation
-   - Spectral: FFT → Feature extraction
-2. All features are concatenated
-3. Fusion network processes combined features
-4. Peak ordering ensures physical constraints
+4. Gradient Refinement
+   - Physics-informed peak refinement
+   - Position fine-tuning
+   - Signal consistency checks
 
 ## Technical Details
 
-### Model Parameters
-- Input: 1D signal
-- Output: 3 values (peak1, midpoint, peak2)
-- Feature dimensions:
-  - Early region: 64
-  - Late region: 64
-  - Template: 64 (after pooling)
-  - Spectral: 64
-- Hidden dimensions: 256, 128, 64
-- Dropout rates: 0.2, 0.3
+### Input/Output Specifications
+- Input: Signal tensor of shape `[batch_size, signal_length]`
+- Output: 3-dimensional prediction tensor (sigmoid activated)
 
-### Key Features
-- Physics-informed processing
-- Region-specific analysis
-- Template matching
-- Spectral analysis
-- Attention-based weighting
-- Peak ordering constraint
+### Key Parameters
+- Early region center: 0.15 (relative time)
+- Late region center: 0.6 (relative time)
+- Template widths: 10-40 samples
+- Hidden dimensions: 256, 64
+- Dropout rate: 0.2 (early/late), 0.3 (fusion)
 
 ## Implementation Notes
-- Uses PyTorch's nn.Module
-- Inherits from BaseModel
-- Implements gradient refinement capability
-- Peak ordering ensures peak1 < midpoint < peak2
-- Efficient FFT-based template matching
-- Custom Hanning template layer
+
+### Dependencies
+- PyTorch
+- Custom components:
+  - SpectralBranch
+  - GradientRefinementModule
+  - HanningTemplateLayer
+
+### Integration Guidelines
+1. Signal should be normalized to [0,1] range
+2. Time axis should be scaled to [0,1]
+3. Early/late region masks are automatically applied
+4. Gradient refinement is applied post-prediction
 
 ## Advantages
-- Physics-based constraints improve accuracy
-- Region-specific processing for better localization
-- Template matching for pattern recognition
-- Spectral analysis for frequency information
-- Attention masks for focused processing
-- Physically meaningful output constraints
-
-## Use Cases
-- Peak detection in time series data
-- Signal processing applications
-- Feature extraction from temporal data
-- Pattern recognition in sequential data
-- Physics-constrained signal analysis 
+- Strong physics-based priors
+- Region-specific processing
+- Efficient template matching via FFT
+- Gradient-based refinement
+- High precision in peak localization 

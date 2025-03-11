@@ -1,76 +1,62 @@
-# Common Components
+# Common Utilities
+
+TL;DR: "I'm the utility belt - everyone needs me! 🛠️"
 
 ## Overview
-The Common components module provides essential utilities and shared components used across different models. It includes specialized layers for peak ordering and adaptive feature pooling, ensuring consistent behavior and efficient processing.
+A collection of common utilities and components used across different models. Currently focuses on adaptive feature pooling for handling variable-length inputs.
 
 ## Architecture
 
-### Key Components
-1. **PeakOrderingLayer**
-   - Position normalization
-   - Order constraints
-   - Minimum separation
-   - Soft constraints
-   - Differentiable operations
-
-2. **AdaptiveFeaturePooling**
-   - Flexible input sizes
+### Core Components
+1. Adaptive Feature Pooling
+   - Flexible input size handling
+   - Configurable output size
    - Multiple pooling types
-   - Fixed output size
-   - Efficient computation
-   - Clean interface
+   - Channel-wise operation
 
-### Data Flow
-1. **PeakOrderingLayer**
-   - Input positions → Clamp to [0,1]
-   - Split into peak1, midpoint, peak2
-   - Apply minimum separation
-   - Recompute midpoint
-   - Concatenate results
-
-2. **AdaptiveFeaturePooling**
-   - Input features → Pooling operation
-   - Resize to fixed output
-   - Return processed features
+### Features
+- Automatic size adaptation
+- Preserves channel dimensions
+- Memory efficient
+- Batch processing support
 
 ## Technical Details
 
-### Module Parameters
-#### PeakOrderingLayer
-- Minimum separation: 0.1 (default)
-- Input shape: [batch_size, 3]
-- Output shape: [batch_size, 3]
+### Input/Output Specifications
+AdaptiveFeaturePooling:
+- Input: `[batch_size, channels, length]`
+- Output: `[batch_size, channels, output_size]`
 
-#### AdaptiveFeaturePooling
+### Key Parameters
 - Output size: 16 (default)
-- Pooling type: 'avg' or 'max'
-- Input shape: [batch_size, channels, length]
-- Output shape: [batch_size, channels, output_size]
-
-### Key Features
-- Position constraints
-- Adaptive pooling
-- Differentiable operations
-- Efficient computation
-- Flexible configuration
+- Pooling types: 
+  - 'avg': Average pooling
+  - 'max': Max pooling
 
 ## Implementation Notes
-- Uses PyTorch's nn.Module
-- Efficient tensor operations
-- Clean interface
-- Memory efficient
-- Robust to input variations
+
+### Dependencies
+- PyTorch
+- torch.nn
+
+### Integration Guidelines
+1. Choose appropriate pooling type:
+   - Average: For smooth feature maps
+   - Max: For peak feature preservation
+2. Set output size based on needs
+3. Can be used in any part of network
+4. Handles variable input lengths
 
 ## Advantages
-- Ensures physical constraints
-- Handles variable input sizes
-- Efficient computation
-- Easy to integrate
-- Memory efficient
+- Flexible input handling
+- Multiple pooling options
+- Simple integration
+- Efficient implementation
+- Batch processing support
 
 ## Use Cases
-- Peak position normalization
 - Feature map resizing
-- Signal processing
-- Pattern detection
-- Feature extraction 
+- Variable length handling
+- Dimension reduction
+- Memory optimization
+- Model architecture flexibility 

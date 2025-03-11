@@ -1,68 +1,62 @@
-# Spectral Branch Component
+# Spectral Branch
+
+TL;DR: "I see frequencies you don't even know exist! 🌈"
 
 ## Overview
-The Spectral Branch component is a specialized module for processing signals in the frequency domain using FFT. It supports windowed FFT processing, different complex number handling modes, and efficient feature extraction from spectral representations.
+A specialized component for processing signals in the frequency domain using windowed FFT analysis. Provides flexible spectral feature extraction with various processing modes.
 
 ## Architecture
 
-### Key Components
-1. **FFT Processing**
-   - Windowed FFT support
-   - Configurable window size
-   - Adjustable stride
-   - Hann window option
-   - Real FFT computation
+### Core Components
+1. FFT Processing
+   - Windowed FFT analysis
+   - Optional Hann window
+   - Support for magnitude, phase, or complex processing
 
-2. **Complex Processing Modes**
-   - Magnitude spectrum
-   - Separate real/imaginary
-   - Complex feature extraction
-   - Phase preservation
-   - Magnitude-phase combination
+2. Feature Extraction
+   - Adaptive window handling
+   - Configurable window size and stride
+   - Window averaging for long signals
 
-3. **Feature Extraction**
-   - Two-layer FC network
-   - ReLU activation
+3. Neural Network
+   - Two-layer MLP
    - Dropout regularization
-   - Configurable output dimension
-   - Adaptive input handling
-
-### Data Flow
-1. Input signal → Windowed FFT
-2. Complex number processing
-3. Feature extraction
-4. Output features
+   - ReLU activations
 
 ## Technical Details
 
-### Module Parameters
-- Signal length: configurable (default: 2048)
-- Output features: configurable (default: 64)
-- Window size: adaptive (default: signal_length/4)
-- Stride: adaptive (default: window_size/2)
-- Use window: configurable (default: True)
-- Process complex: 'magnitude', 'separate', or 'complex'
+### Input/Output Specifications
+- Input: Signal tensor of shape `[batch_size, channels, signal_length]`
+- Output: Feature tensor of shape `[batch_size, out_features]`
 
-### Key Features
-- Windowed FFT processing
-- Multiple complex modes
-- Adaptive window sizing
-- Efficient feature extraction
-- Flexible configuration
+### Key Parameters
+- Window size: 512 (default)
+- Stride: 256 (default)
+- Output features: 64 (default)
+- Hidden dimension: 128
+- Dropout rate: 0.3
+- Processing modes: magnitude, phase, complex
 
 ## Implementation Notes
-- Uses PyTorch's nn.Module
-- Efficient FFT computation
-- Memory-efficient processing
-- Robust to input variations
-- Clean interface
+
+### Dependencies
+- PyTorch
+- torch.fft module
+
+### Integration Guidelines
+1. Choose appropriate window size for signal length
+2. Select processing mode based on needs:
+   - 'magnitude': Spectral power features
+   - 'phase': Phase information
+   - 'complex': Both real and imaginary parts
+3. Enable/disable windowing based on signal characteristics
 
 ## Advantages
-- Frequency domain analysis
-- Window-based processing
-- Multiple complex modes
-- Efficient computation
-- Flexible configuration
+- Flexible spectral processing
+- Efficient windowed analysis
+- Multiple processing modes
+- Automatic dimension handling
+- Memory-efficient implementation
 
 ## Use Cases
 - Spectral analysis

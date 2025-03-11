@@ -1,68 +1,52 @@
 # Simplest Possible Model
 
-> TL;DR: The minimalist's dream - just two layers and a dream, proving that sometimes less is more when it comes to peak detection.
+TL;DR: "Keep It Simple, Silly! Sometimes less is more... or at least it's something! 🤷‍♂️"
 
 ## Overview
-The Simplest Possible model serves as a baseline architecture for peak detection. It implements a minimal neural network design with just two fully connected layers, demonstrating the fundamental approach to the peak detection task while maintaining physical constraints through peak ordering.
+The most basic model that makes minimal assumptions about the signal structure. Uses a simple two-layer fully connected architecture with dropout regularization.
 
 ## Architecture
 
-### Key Components
-1. **Input Processing**
-   - Flatten layer for 1D signal
-   - Input dimension: signal length
-   - No spatial processing
+### Core Components
+1. Input Processing
+   - Flattening layer
+   - No assumptions about signal structure
 
-2. **First Layer**
-   - Fully connected layer
-   - Input → 64 hidden units
+2. Neural Network
+   - First layer: signal_length → 64
    - ReLU activation
    - Dropout (0.2)
-
-3. **Output Layer**
-   - Fully connected layer
-   - 64 → 3 output units
-   - No activation (linear)
-
-4. **Peak Ordering**
-   - Ensures physical constraints
-   - Maintains peak1 < midpoint < peak2
-
-### Data Flow
-1. Input signal → Flatten
-2. First FC layer → ReLU → Dropout
-3. Second FC layer
-4. Peak ordering
-5. Output
+   - Second layer: 64 → 3
+   - Sigmoid output activation
 
 ## Technical Details
 
-### Model Parameters
-- Input: 1D signal
-- Output: 3 values (peak1, midpoint, peak2)
+### Input/Output Specifications
+- Input: Signal tensor of shape `[batch_size, signal_length]`
+- Output: 3-dimensional prediction tensor (sigmoid activated)
+
+### Key Parameters
 - Hidden dimension: 64
 - Dropout rate: 0.2
-
-### Key Features
-- Minimal architecture
-- Fast inference
-- Peak ordering constraint
-- Light regularization
-- No spatial processing
+- Output dimension: 3
 
 ## Implementation Notes
-- Uses PyTorch's nn.Module
-- Inherits from BaseModel
-- Implements gradient refinement capability
-- Peak ordering ensures physical constraints
-- Efficient forward pass
+
+### Dependencies
+- PyTorch
+- No custom components required
+
+### Integration Guidelines
+1. Signal can be any length (defined in config)
+2. No preprocessing required beyond basic normalization
+3. Output is always sigmoid-activated
 
 ## Advantages
-- Fastest inference time
-- Minimal memory usage
-- Easy to understand
-- Good baseline performance
-- Physically meaningful output
+- Extremely simple architecture
+- Minimal assumptions
+- Fast training and inference
+- Perfect for baseline comparisons
+- Easy to debug and understand
 
 ## Use Cases
 - Baseline for peak detection

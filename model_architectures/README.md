@@ -1,24 +1,20 @@
 # Model Architectures Documentation
 
-This directory contains comprehensive documentation for all models and components in the Casana project. The documentation is organized into two main sections:
+This directory contains comprehensive documentation for all models and components in the Casana project. We've streamlined our architectures to focus on what really matters - getting those peaks just right! 🎯
 
 ## Directory Structure
 ```
 model_architectures/
 ├── models/              # Documentation for complete model architectures
 │   ├── attention_dilated_conv1d.md
-│   ├── dual_pathway_fft.md
-│   ├── multi_scale_conv1d.md
 │   ├── pinn_peak_detector.md
-│   ├── spectral_peak_detector.md
 │   ├── simplest_possible.md
-│   └── transformer_conv1d.md
+│   └── base_model.md
 └── components/         # Documentation for reusable components
-    ├── attention.md
+    ├── spectral_branch.md
     ├── gradient_refinement.md
     ├── mlp_blocks.md
     ├── multi_scale_cnn.md
-    ├── spectral_branch.md
     └── common.md
 ```
 
@@ -53,21 +49,64 @@ Each documentation file follows a consistent structure:
 ## Models
 
 ### Complete Architectures
-- `attention_dilated_conv1d.md`: Attention-based dilated convolution model
-- `dual_pathway_fft.md`: Dual pathway model with FFT processing
-- `multi_scale_conv1d.md`: Multi-scale convolutional model
-- `pinn_peak_detector.md`: Physics-informed neural network for peak detection
-- `spectral_peak_detector.md`: Spectral domain peak detection model
-- `simplest_possible.md`: Minimal implementation for baseline
-- `transformer_conv1d.md`: Transformer-based convolutional model
+
+#### attention_dilated_conv1d.md
+TL;DR: "I pay attention to ALL the peaks, but I'm not obsessed with physics. I just do what works! 🧠"
+- Middle-tier model incorporating signal processing knowledge
+- Multi-scale convolutions with attention mechanisms
+- No heavy physics priors required
+
+#### pinn_peak_detector.md
+TL;DR: "I'm the physics nerd who actually reads the textbooks. And yes, I'll tell you why your peaks are wrong! 🤓"
+- Physics-informed neural network
+- Hanning template matching
+- Spectral analysis and gradient-based refinement
+- Early/late region specialization
+
+#### simplest_possible.md
+TL;DR: "Keep It Simple, Silly! Sometimes less is more... or at least it's something! 🤷‍♂️"
+- Minimal assumptions about signal structure
+- Two-layer fully connected architecture
+- Light dropout regularization
+- Perfect for baseline comparisons
+
+#### base_model.md
+TL;DR: "I'm the template everyone copies from. Not much to see here! 🏗️"
+- Base class for all models
+- Common functionality and interfaces
+- Essential building blocks
 
 ### Components
-- `attention.md`: Attention mechanisms and modules
-- `gradient_refinement.md`: Gradient-based peak refinement
-- `mlp_blocks.md`: Multi-layer perceptron building blocks
-- `multi_scale_cnn.md`: Multi-scale convolutional components
-- `spectral_branch.md`: Spectral processing components
-- `common.md`: Common utilities and shared components
+
+#### spectral_branch.md
+TL;DR: "I see frequencies you don't even know exist! 🌈"
+- Spectral analysis module
+- Frequency domain processing
+- Feature extraction from signal spectra
+
+#### gradient_refinement.md
+TL;DR: "Trust me, that peak is *slightly* to the left... 🎯"
+- Gradient-based peak position refinement
+- Fine-tuning of peak locations
+- Physics-informed corrections
+
+#### mlp_blocks.md
+TL;DR: "I'm just a bunch of neurons doing honest work! 🧱"
+- Multi-layer perceptron building blocks
+- Skip connections and dropout options
+- Flexible layer configurations
+
+#### multi_scale_cnn.md
+TL;DR: "I look at your signal from every possible angle! 🔍"
+- Multi-scale convolutional components
+- Various kernel sizes and dilations
+- Feature extraction at different scales
+
+#### common.md
+TL;DR: "I'm the utility belt - everyone needs me! 🛠️"
+- Common utilities and shared components
+- Helper functions and base classes
+- Shared preprocessing tools
 
 ## Contributing
 
@@ -76,4 +115,4 @@ When adding new documentation:
 2. Include clear technical details
 3. Provide implementation notes
 4. Document advantages and use cases
-5. Add visualizations where helpful 
+5. Add visualizations where helpful

@@ -1,74 +1,66 @@
-# Attention Dilated Conv1D Model
+# Attention Dilated Conv1D
 
-> TL;DR: The long-sighted attention seeker - it's got eyes everywhere (literally, with dilated convolutions) and knows exactly what to focus on, thanks to its channel-wise attention mechanism.
+TL;DR: "I pay attention to ALL the peaks, but I'm not obsessed with physics. I just do what works! 🧠"
 
 ## Overview
-The Attention Dilated Conv1D model is a sophisticated neural network architecture designed for peak detection in time series data. It combines multi-scale processing, attention mechanisms, and dilated convolutions to effectively identify and localize peaks in signals.
+A middle-tier model that incorporates signal processing knowledge through multi-scale convolutions and attention mechanisms, without requiring heavy physics-based priors.
 
 ## Architecture
 
-### Key Components
-1. **Multi-Scale CNN Branch**
-   - Processes input at multiple temporal scales
-   - Uses kernel sizes of 7, 15, and 31
-   - 16 channels per kernel size
-   - No initial pooling to preserve temporal information
+### Core Components
+1. Multi-scale CNN Branch
+   - Multiple kernel sizes (7, 15, 31)
+   - 16 channels per kernel
+   - Feature extraction mode
 
-2. **Channel Attention Mechanism**
-   - Global average pooling
-   - Two-layer MLP for channel-wise attention
+2. Channel Attention
+   - Adaptive average pooling
+   - Two-layer MLP attention mechanism
    - Sigmoid activation for attention weights
-   - Learns to focus on relevant feature channels
 
-3. **Dilated Convolution Block**
-   - Kernel size: 5
-   - Dilation rate: 2
-   - Padding: 4
-   - 48 input channels → 64 output channels
-   - ReLU activation
+3. Temporal Processing
+   - Dilated convolution (kernel=5, dilation=2)
+   - Max pooling for dimensionality reduction
+   - Adaptive feature pooling
 
-4. **Feature Processing Pipeline**
-   - MaxPool1d layers (stride=2)
-   - Standard convolution (kernel=5, padding=2)
-   - Adaptive feature pooling to fixed size
-   - Skip connection MLP block
-   - Peak ordering layer
-
-### Data Flow
-1. Input signal → Multi-scale processing
-2. Channel attention weighting
-3. Pooling and dilated convolution
-4. Feature extraction and pooling
-5. MLP processing with skip connections
-6. Peak ordering and output
+4. Classification Head
+   - Skip-connection MLP
+   - Dropout regularization (0.3)
+   - Sigmoid output activation
 
 ## Technical Details
 
-### Model Parameters
-- Input: 1D signal
-- Output: 3 values (peak1, midpoint, peak2)
-- Hidden dimensions: 64, 256
-- Dropout rate: 0.3
+### Input/Output Specifications
+- Input: Signal tensor of shape `[batch_size, signal_length]`
+- Output: 3-dimensional prediction tensor with sigmoid activation
 
-### Key Features
-- Multi-scale temporal processing
-- Channel-wise attention mechanism
-- Dilated convolutions for increased receptive field
-- Skip connections for gradient flow
-- Peak ordering constraint
+### Key Parameters
+- Multi-scale kernel sizes: [7, 15, 31]
+- Channels per kernel: 16
+- Dilated conv: kernel=5, dilation=2
+- Dropout rate: 0.3
+- Output dimension: 3
 
 ## Implementation Notes
-- Uses PyTorch's nn.Module
-- Inherits from BaseModel
-- Implements gradient refinement capability
-- Peak ordering ensures peak1 < midpoint < peak2
+
+### Dependencies
+- PyTorch
+- Custom components:
+  - MultiScaleCNNBranch
+  - SkipConnectionMLP
+  - AdaptiveFeaturePooling
+
+### Integration Guidelines
+1. Ensure signal is properly normalized
+2. Input can be either 2D or 3D (handles channel dimension automatically)
+3. Output is always sigmoid-activated for stable training
 
 ## Advantages
-- Effective at capturing multi-scale temporal patterns
-- Attention mechanism helps focus on relevant features
-- Dilated convolutions provide large receptive field with fewer parameters
-- Skip connections help with training stability
-- Peak ordering ensures physically meaningful output
+- Balanced approach between data-driven and signal processing
+- Effective multi-scale feature extraction
+- Attention mechanism helps focus on relevant signal regions
+- No heavy physics assumptions required
+- Good compromise between complexity and performance
 
 ## Use Cases
 - Peak detection in time series data

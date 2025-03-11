@@ -1,70 +1,82 @@
-# Multi-Scale CNN Component
+# Multi-Scale CNN
+
+TL;DR: "I look at your signal from every possible angle! 🔍"
 
 ## Overview
-The Multi-Scale CNN component is a flexible module that processes input signals using parallel convolutional branches with different kernel sizes. This enables the capture of features at multiple temporal scales simultaneously, making it particularly effective for signal processing tasks.
+A convolutional neural network component that processes signals at multiple scales simultaneously using parallel convolutions with different kernel sizes. Can operate as a feature extractor or complete classifier.
 
 ## Architecture
 
-### Key Components
-1. **Parallel Convolution Branches**
-   - Multiple kernel sizes
-   - Configurable channels per kernel
-   - Same padding for size preservation
-   - ReLU activation
+### Core Components
+1. Multi-Scale Convolutions
+   - Parallel convolution layers
+   - Different kernel sizes (7, 15, 31)
+   - Shared channels per kernel (16)
+   - Padding for length preservation
+
+2. Feature Processing
    - Channel concatenation
+   - Second conv (64 channels, kernel=9)
+   - Third conv (64 channels, kernel=5)
+   - Max pooling (stride=2)
+   - Adaptive average pooling (16)
 
-2. **Pooling Layer**
-   - Configurable pooling type
-   - Options: max, average, or none
-   - Adjustable pooling size
-   - Optional operation
-
-3. **Activation Function**
-   - Default: ReLU
-   - Configurable activation
-   - Applied per branch
-
-### Data Flow
-1. Input signal → Parallel convolutions
-2. Activation per branch
-3. Channel concatenation
-4. Optional pooling
-5. Output features
+3. Classification Head (Optional)
+   - Input: 64 * 16 features
+   - Hidden layer: 256 units
+   - Skip connection: 64 units
+   - Batch normalization
+   - Dropout (0.3)
+   - Output: 3 units with sigmoid
 
 ## Technical Details
 
-### Module Parameters
-- Input channels: configurable (default: 1)
-- Channels per kernel: configurable (default: 16)
-- Kernel sizes: configurable tuple (default: (7, 15, 31))
-- Pooling type: 'max', 'avg', or None
-- Pooling size: configurable (default: 2)
-- Activation: configurable (default: ReLU)
+### Input/Output Specifications
+Feature Extractor Mode:
+- Input: `[batch_size, in_channels, signal_length]`
+- Output: `[batch_size, channels_per_kernel * num_kernels, signal_length]`
 
-### Key Features
-- Multi-scale processing
-- Parallel feature extraction
-- Flexible pooling options
-- Configurable activation
-- Efficient tensor operations
+Classification Mode:
+- Input: `[batch_size, in_channels, signal_length]`
+- Output: `[batch_size, 3]` (sigmoid activated)
+
+### Key Parameters
+- Input channels: 1 (default)
+- Channels per kernel: 16
+- Kernel sizes: (7, 15, 31)
+- Second conv: 64 channels, kernel=9
+- Third conv: 64 channels, kernel=5
+- Pooling options: max, avg, none
+- Dropout rate: 0.3
+- Feature dimensions: 64, 256
 
 ## Implementation Notes
-- Uses PyTorch's nn.Module
-- Efficient parallel processing
-- Memory-efficient concatenation
-- Flexible configuration
-- Clean interface
+
+### Dependencies
+- PyTorch
+- torch.nn.functional
+
+### Integration Guidelines
+1. Choose operating mode:
+   - Feature extractor: Set feature_extractor_mode=True
+   - Classifier: Set feature_extractor_mode=False
+2. Configure kernel sizes for application
+3. Select appropriate pooling strategy:
+   - 'max': For peak feature detection
+   - 'avg': For smooth feature maps
+   - None: For full resolution
+4. Adjust channels based on complexity needs
 
 ## Advantages
-- Captures multiple temporal scales
-- Efficient parallel processing
-- Flexible architecture
-- Easy to integrate
-- Memory efficient
+- Multi-scale feature extraction
+- Flexible operating modes
+- Skip connection support
+- Configurable architecture
+- Efficient implementation
 
 ## Use Cases
-- Signal processing
-- Feature extraction
-- Pattern recognition
+- Signal feature extraction
 - Multi-scale analysis
-- Temporal modeling 
+- Pattern recognition
+- Time series processing
+- Signal classification 
