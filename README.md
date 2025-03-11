@@ -3,6 +3,12 @@
 ## Overview
 A neural network framework for detecting peaks in noisy signals, focusing on modularity and reproducibility.
 
+## Model Results
+The latest model training results and prediction figures can be found in the `best_model_results/` directory. This includes:
+- Model-specific performance metrics and visualizations in dedicated subdirectories
+- Comparative analysis between different model architectures
+- Up-to-date prediction figures and performance metrics
+
 ## Key Principles
 ### 1. Experiment Pipeline
 - Central configuration via YAML
@@ -113,22 +119,9 @@ Validation:
 - Real-world signal comparison
 
 ## Future Considerations
+These models obviously could have more things integrated in their training, including at the very least some hyperoptimization of training parameters using Optuna or something similar. 
 
-### Scaling Strategy
-1. Performance Optimization
-   - ONNX runtime deployment
-   - Quantization-aware training
-   - Batch size optimization
-
-2. Architecture Extensions
-   - Multi-resolution processing
-   - Uncertainty estimation
-   - Online learning capabilities
-
-3. Known Limitations
-   - Peak overlap handling
-   - Extreme noise scenarios
-   - Computational complexity scaling
+There's also many other opportunities to scale these architectures or add varioius other branches / training strategies. These simply provided a subset of scaled ideas for this isolated problem. 
 
 ## Problem Statement
 Given a signal with two peaks and noise, predict:
