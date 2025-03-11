@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-03-11T14:36:31.815358",
+  "model": {
+    "name": "simplest_possible",
+    "num_parameters": 131331
+  },
+  "hyperparameters": {
+    "num_epochs": 100000,
+    "batch_size": 256,
+    "learning_rate": {
+      "start": 0.0001,
+      "end": 1e-06,
+      "epochs_to_min": 100000
+    }
+  },
+  "training": {
+    "final_loss": 0.10970360040664673
+  },
+  "evaluation_metrics": {
+    "eval_loss": 0.18128430843353271,
+    "position_errors": {
+      "peak1_error": 0.06505760550498962,
+      "midpoint_error": 0.04277787730097771,
+      "peak2_error": 0.11068962514400482
+    },
+    "magnitude_errors": {
+      "peak1_magnitude_error": 0.9165903329849243,
+      "midpoint_magnitude_error": 0.18032336235046387,
+      "peak2_magnitude_error": 0.7758573889732361
+    }
+  }
+}

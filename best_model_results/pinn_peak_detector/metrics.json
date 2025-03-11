@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-03-11T18:00:33.708517",
+  "model": {
+    "name": "pinn_peak_detector",
+    "num_parameters": 1544994
+  },
+  "hyperparameters": {
+    "num_epochs": 24444,
+    "batch_size": 1024,
+    "learning_rate": {
+      "start": 1e-05,
+      "end": 1e-06,
+      "epochs_to_min": 100000
+    }
+  },
+  "training": {
+    "final_loss": 0.022380102425813675
+  },
+  "evaluation_metrics": {
+    "eval_loss": 0.016343005001544952,
+    "position_errors": {
+      "peak1_error": 0.032743409276008606,
+      "midpoint_error": 0.020163916051387787,
+      "peak2_error": 0.043423403054475784
+    },
+    "magnitude_errors": {
+      "peak1_magnitude_error": 0.9497592449188232,
+      "midpoint_magnitude_error": 0.12771393358707428,
+      "peak2_magnitude_error": 0.7725529670715332
+    }
+  }
+}
