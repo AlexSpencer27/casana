@@ -90,6 +90,12 @@ Current implementation uses static weights, but infrastructure supports dynamic 
 .
 ├── config.yaml           # Configuration
 ├── pyproject.toml       # Dependencies
+├── multi_experiment_run/  # Multi-model experiment framework
+│   ├── multi_config.yaml # Experiment configurations
+│   └── run_experiments.py # Experiment runner
+├── best_model_results/   # Maintained experiment results
+│   ├── model_comparison.png  # Performance visualization
+│   └── {model_name}/    # Per-model results
 └── src/
     ├── config/         
     ├── models/          
@@ -97,6 +103,8 @@ Current implementation uses static weights, but infrastructure supports dynamic 
     ├── utils/           
     └── train.py         
 ```
+
+Results from experiments are maintained in `best_model_results/`, providing performance comparisons and detailed per-model metrics.
 
 ## Usage
 
