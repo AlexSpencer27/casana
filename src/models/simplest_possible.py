@@ -8,6 +8,9 @@ from src.models.base_model import BaseModel
 
 @register_model("simplest_possible")
 class SimplestPossible(BaseModel):
+    """The most basic model that makes minimal assumptions about the signal structure.
+    Uses a simple two-layer fully connected architecture with dropout regularization."""
+    
     def __init__(self) -> None:
         super().__init__()
         # Simple two-layer architecture

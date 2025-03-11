@@ -8,53 +8,16 @@ from src.models import register_model
 from src.models.base_model import BaseModel
 from src.models.components import SpectralBranch, GradientRefinementModule
 
-class HanningTemplateLayer(nn.Module):
-    """Custom layer for template matching with Hanning windows of different widths"""
-    def __init__(self, min_width=10, max_width=40, num_templates=4):
-        super().__init__()
-        self.min_width = min_width
-        self.max_width = max_width
-        self.num_templates = num_templates
-        
-        # Generate template widths
-        self.widths = torch.linspace(min_width, max_width, num_templates, dtype=torch.int)
-        
-        # Create learnable weights for each template
-        self.template_weights = nn.Parameter(torch.ones(num_templates))
-        
-    def forward(self, x):
-        batch_size, signal_length = x.shape
-        all_correlations = []
-        
-        for i, width in enumerate(self.widths):
-            width = width.item()
-            template = torch.from_numpy(np.hanning(width * 2)).float().to(x.device)
-            
-            # Pad template to match signal length
-            padded_template = F.pad(template, (0, signal_length - template.size(0)))
-            
-            # Compute correlation using FFT for efficiency
-            x_fft = torch.fft.rfft(x)
-            template_fft = torch.fft.rfft(padded_template.repeat(batch_size, 1))
-            correlation = torch.fft.irfft(x_fft * torch.conj(template_fft), n=signal_length)
-            
-            # Apply learnable weight for this template
-            weighted_correlation = correlation * self.template_weights[i]
-            all_correlations.append(weighted_correlation)
-            
-        # Stack and sum correlations
-        return torch.stack(all_correlations, dim=1).sum(dim=1)
-
 @register_model("pinn_peak_detector")
 class PINNPeakDetector(BaseModel):
+    """Physics-informed neural network that incorporates domain knowledge through 
+    Hanning template matching, spectral analysis, and gradient-based refinement."""
+    
     def __init__(self) -> None:
         super().__init__()
         
         # Signal parameters
         self.signal_length = config.signal.length
-        
-        # Flatten layer (to match the SimplestPossible interface)
-        self.flatten = nn.Flatten()
         
         # Early region network (focused on first peak region)
         self.early_fc = nn.Sequential(
@@ -77,23 +40,22 @@ class PINNPeakDetector(BaseModel):
         # Hanning template matching
         self.template_matcher = HanningTemplateLayer(min_width=10, max_width=40, num_templates=4)
         
-        # Spectral analysis using component
+        # Spectral analysis branch
         self.spectral_module = SpectralBranch(
             signal_length=self.signal_length,
             out_features=64
         )
         
-        # Attention for signal weighting based on expected peak regions
-        # We'll create two attention masks: one for early region (0.05-0.25) and one for late region (0.3-0.9)
+        # Create attention masks for expected peak regions
         time_points = torch.linspace(0, 1, self.signal_length)
-        early_mask = torch.exp(-((time_points - 0.15) / 0.1)**2)  # Centered at 0.15 (middle of 0.05-0.25)
-        late_mask = torch.exp(-((time_points - 0.6) / 0.3)**2)   # Centered at 0.6 (middle of 0.3-0.9)
+        early_mask = torch.exp(-((time_points - 0.15) / 0.1)**2)  # Centered at 0.15
+        late_mask = torch.exp(-((time_points - 0.6) / 0.3)**2)    # Centered at 0.6
         self.register_buffer('early_mask', early_mask)
         self.register_buffer('late_mask', late_mask)
         
         # Feature fusion layer
         self.fusion = nn.Sequential(
-            nn.Linear(64 + 64 + 64 + 64, 128),  # early + late + template + spectral
+            nn.Linear(64 * 4, 128),  # early + late + template + spectral
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(128, 64),
@@ -103,19 +65,18 @@ class PINNPeakDetector(BaseModel):
         # Output layer
         self.output = nn.Linear(64, 3)
         
-        # Dropout for regularization
-        self.dropout = nn.Dropout(0.2)
+        # Gradient refinement module
+        self.gradient_refiner = GradientRefinementModule()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Ensure we're working with flattened input as in SimplestPossible
-        x = self.flatten(x)
-        batch_size = x.shape[0]
+        batch_size = x.size(0)
+        x_flat = x.view(batch_size, -1)
         
-        # Apply early and late region attention masks
-        early_weighted = x * self.early_mask.repeat(batch_size, 1)
-        late_weighted = x * self.late_mask.repeat(batch_size, 1)
+        # Process early and late regions with attention masks
+        early_weighted = x_flat * self.early_mask
+        late_weighted = x_flat * self.late_mask
         
-        # Process through each specialized path
+        # Extract features from each pathway
         early_features = self.early_fc(early_weighted)
         late_features = self.late_fc(late_weighted)
         
@@ -123,10 +84,10 @@ class PINNPeakDetector(BaseModel):
         template_features = self.template_matcher(x)
         template_pooled = F.adaptive_avg_pool1d(template_features.unsqueeze(1), 64).squeeze(1)
         
-        # Spectral features using component
+        # Spectral features
         spectral_features = self.spectral_module(x.unsqueeze(1))
         
-        # Concatenate all feature types
+        # Combine all feature types
         combined_features = torch.cat([
             early_features,
             late_features, 
@@ -134,16 +95,43 @@ class PINNPeakDetector(BaseModel):
             spectral_features
         ], dim=1)
         
-        # Fuse the features
+        # Fuse features and generate initial prediction
         fused = self.fusion(combined_features)
+        output = self.output(fused)
         
-        # Initial output layer
-        x = self.output(fused)
+        # Apply gradient-based refinement
+        refined_output = self.gradient_refiner(output, x)
         
-        # Apply gradient refinement to find exact zero-gradient points
-        x = self.refine_peaks(x, x)
+        return torch.sigmoid(refined_output)
+
+
+class HanningTemplateLayer(nn.Module):
+    """Custom layer for template matching with Hanning windows of different widths"""
+    def __init__(self, min_width=10, max_width=40, num_templates=4):
+        super().__init__()
+        self.min_width = min_width
+        self.max_width = max_width
+        self.num_templates = num_templates
         
-        # Apply sigmoid activation
-        x = torch.sigmoid(x)
+        # Generate template widths
+        self.widths = torch.linspace(min_width, max_width, num_templates, dtype=torch.int)
+        self.template_weights = nn.Parameter(torch.ones(num_templates))
         
-        return x
+    def forward(self, x):
+        batch_size, signal_length = x.shape
+        all_correlations = []
+        
+        for i, width in enumerate(self.widths):
+            width = width.item()
+            template = torch.from_numpy(np.hanning(width * 2)).float().to(x.device)
+            padded_template = F.pad(template, (0, signal_length - template.size(0)))
+            
+            # Compute correlation using FFT for efficiency
+            x_fft = torch.fft.rfft(x)
+            template_fft = torch.fft.rfft(padded_template.repeat(batch_size, 1))
+            correlation = torch.fft.irfft(x_fft * torch.conj(template_fft), n=signal_length)
+            
+            weighted_correlation = correlation * self.template_weights[i]
+            all_correlations.append(weighted_correlation)
+            
+        return torch.stack(all_correlations, dim=1).sum(dim=1)

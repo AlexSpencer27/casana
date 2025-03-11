@@ -1,12 +1,12 @@
 base_config:
   curriculum:
     complex_noise:
-      end_amplitude: 0.0
+      end_amplitude: 0.2
       epochs_to_max: 10000
       min_amplitude: 0.05
-      start_amplitude: 0.00
+      start_amplitude: 0.2
     learning_rate:
-      end: 1.0e-06
+      end: 1.0e-07
       epochs_to_min: 10000
       start: 1.0e-06
     loss_weights:
@@ -36,8 +36,8 @@ base_config:
     batch_size: 32
     early_stopping:
       min_delta: 0.0001
-      patience: 1000
-    num_epochs: 1000
+      patience: 5000
+    num_epochs: 1000000
   visualization:
     num_predictions: 10
     plot_frequency: 1000

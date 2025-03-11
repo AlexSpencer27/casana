@@ -3,22 +3,18 @@ Neural network components for building models.
 This module contains reusable building blocks that can be combined to create models.
 """
 
-# Import all components to make them available when importing from components
-from .multi_scale_cnn import MultiScaleCNNBranch
-from .spectral_branch import SpectralBranch
-from .gradient_refinement import GradientRefinementModule
-from .common import AdaptiveFeaturePooling, BoundedPeakOutput
-from .mlp_blocks import SkipConnectionMLP
-from .attention import AttentionModule, CrossPathwayAttention
+# Import components needed for our three models
+from .multi_scale_cnn import MultiScaleCNNBranch  # Used by AttentionDilatedConv1D
+from .spectral_branch import SpectralBranch  # Used by PINN
+from .gradient_refinement import GradientRefinementModule  # Used by PINN
+from .common import AdaptiveFeaturePooling  # Used by AttentionDilatedConv1D
+from .mlp_blocks import SkipConnectionMLP  # Used by AttentionDilatedConv1D
 
-# Export all components
+# Export components
 __all__ = [
     'MultiScaleCNNBranch',
     'SpectralBranch',
     'GradientRefinementModule',
     'AdaptiveFeaturePooling',
-    'BoundedPeakOutput',
-    'SkipConnectionMLP',
-    'AttentionModule',
-    'CrossPathwayAttention',
+    'SkipConnectionMLP'
 ] 

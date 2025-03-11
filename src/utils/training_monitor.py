@@ -81,7 +81,7 @@ class TrainingMonitor:
         Returns:
             Current moving average value or None if not enough data points
         """
-        if len(self.losses) < 2:
+        if len(self.losses) < 100:
             return None
             
         ma_window = self._get_ma_window()
@@ -206,8 +206,8 @@ class TrainingMonitor:
         )
         
         # Plot 1: Total Loss
-        # clip losses to 5th to 95th percentile
-        plot_losses = np.clip(self.losses, np.percentile(self.losses, 5), np.percentile(self.losses, 95))
+        # clip losses to  percentile
+        plot_losses = np.clip(self.losses, np.percentile(self.losses, 0.1), np.percentile(self.losses, 99.9))
         # Add individual loss points
         fig.add_trace(
             go.Scatter(
@@ -411,7 +411,7 @@ class TrainingMonitor:
             template='plotly_white',
             showlegend=True,
             width=1200,  # Increased width to accommodate legends
-            height=1600,  # Increased height for 4 subplots
+            height=2400,  # Increased height for 4 subplots
             font=dict(size=14),
             # Remove gridlines
             xaxis=dict(showgrid=False),
@@ -457,13 +457,13 @@ class TrainingMonitor:
         
         # Update x-axes labels
         fig.update_xaxes(title_text="Iteration", row=3, col=1)
-        fig.update_xaxes(title_text="Target Position", row=4, col=1)
+        fig.update_xaxes(title_text="Target Position", range=[0., 1.], row=4, col=1)
         
         # Update y-axes labels
         fig.update_yaxes(title_text="Loss", row=1, col=1)
         fig.update_yaxes(title_text="Component Loss", row=2, col=1)
         fig.update_yaxes(title_text="Value", row=3, col=1)
-        fig.update_yaxes(title_text="Predicted Position", row=4, col=1)
+        fig.update_yaxes(title_text="Predicted Position", range=[0., 1.], row=4, col=1)
         
         fig.write_image(str(self.save_dir / filename))
     

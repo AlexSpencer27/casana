@@ -5,33 +5,28 @@ from src.losses import register_loss
 from src.losses.base_loss import BaseLoss
 from src.config.config import config
 
-@register_loss("gradient_aware")
-class GradientAwareLoss(BaseLoss):
-    """Loss function that checks both signal values and gradient properties at peak locations"""
+@register_loss("peak_loss")
+class PeakLoss(BaseLoss):
+    """Unified loss function for peak detection that can handle both simple MSE and gradient-aware cases.
+    When gradient_weight and second_derivative_weight are 0, behaves like SimpleMSELoss.
+    When non-zero, adds gradient and curvature constraints for more physics-informed behavior."""
     
     def __init__(self) -> None:
         """Initialize the loss function."""
         super().__init__()
-        self.position_weight = config.loss.position_weight
-        self.magnitude_weight = config.loss.magnitude_weight
-        self.gradient_weight = config.loss.gradient_weight
-        self.second_derivative_weight = config.loss.second_derivative_weight
+        # Get initial weights from curriculum
+        self.position_weight = config.curriculum.loss_weights.start.position
+        self.magnitude_weight = config.curriculum.loss_weights.start.magnitude
+        self.gradient_weight = config.curriculum.loss_weights.start.gradient
+        self.second_derivative_weight = config.curriculum.loss_weights.start.second_derivative
         
-        # Step size based on quarter of minimum peak width (10/4 = 2.5 samples)
-        # This gives us a good balance between local behavior and numerical stability
-        # Convert to normalized coordinates by dividing by signal length
-        self.step_size = (10.0 / 4.0) / config.signal.length
+        # Only compute step size if we're using gradient terms
+        if self.gradient_weight > 0 or self.second_derivative_weight > 0:
+            # Step size based on quarter of standard peak width (25/4 = 6.25 samples)
+            self.step_size = (25.0 / 4.0) / config.signal.length
     
     def sample_signal_values(self, signals: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
-        """Sample signal values at given positions using linear interpolation.
-        
-        Args:
-            signals: Input signals of shape (batch_size, 1, signal_length)
-            positions: Positions to sample at, normalized to [0,1] (batch_size, 3)
-            
-        Returns:
-            Sampled values of shape (batch_size, 3)
-        """
+        """Sample signal values at given positions using linear interpolation."""
         # Convert normalized positions to indices
         indices = positions * (signals.size(-1) - 1)
         
@@ -52,21 +47,10 @@ class GradientAwareLoss(BaseLoss):
         values_left = torch.gather(signals_flat, 1, idx_left)
         values_right = torch.gather(signals_flat, 1, idx_right)
         
-        # Compute interpolated values
-        interpolated = values_left * weights_left + values_right * weights_right
-        
-        return interpolated
+        return values_left * weights_left + values_right * weights_right
     
     def compute_gradients(self, signals: torch.Tensor, positions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Compute first and second derivatives at given positions.
-        
-        Args:
-            signals: Input signals of shape (batch_size, 1, signal_length)
-            positions: Positions to compute gradients at, normalized to [0,1] (batch_size, 3)
-            
-        Returns:
-            Tuple of (first_derivatives, second_derivatives) at the specified positions
-        """
+        """Compute first and second derivatives at given positions."""
         # Sample points for central difference
         pos_left = torch.clamp(positions - self.step_size, 0, 1)
         pos_right = torch.clamp(positions + self.step_size, 0, 1)
@@ -76,14 +60,8 @@ class GradientAwareLoss(BaseLoss):
         values_left = self.sample_signal_values(signals, pos_left)
         values_right = self.sample_signal_values(signals, pos_right)
         
-        # Note: signals are already normalized in generate_batch()
-        # signal = (signal - signal.mean()) / signal.std()
-        # So we don't need additional normalization here
-        
-        # Compute first derivative using central difference
+        # Compute derivatives using central difference
         first_derivative = (values_right - values_left) / (2 * self.step_size)
-        
-        # Compute second derivative using central difference
         second_derivative = (values_right - 2 * values + values_left) / (self.step_size * self.step_size)
         
         return first_derivative, second_derivative
@@ -97,29 +75,26 @@ class GradientAwareLoss(BaseLoss):
             signals: Input signals (batch_size, 1, signal_length)
             
         Returns:
-            Combined loss value
+            Combined loss value based on enabled terms
         """
-        # Get position and magnitude losses from base class
+        # Get position and magnitude losses (always computed)
         position_loss, magnitude_loss = self.compute_position_and_magnitude_losses(outputs, targets, signals)
+        total_loss = self.position_weight * position_loss + self.magnitude_weight * magnitude_loss
         
-        # Compute gradients at predicted peak positions
-        # We only care about peak positions (indices 0 and 2), not midpoint
-        peak_positions = torch.cat([outputs[:, 0:1], outputs[:, 2:]], dim=1)
-        first_deriv, second_deriv = self.compute_gradients(signals, peak_positions)
-        
-        # Gradient loss - first derivative should be zero at peaks
-        gradient_loss = torch.mean(first_deriv ** 2)
-        
-        # Second derivative loss - maximize negative curvature at peaks
-        # Using mean() of second_deriv would minimize it, so we use -mean() to maximize negative curvature
-        curvature_error = -torch.mean(second_deriv)
-        
-        # Combine all losses
-        total_loss = (
-            self.position_weight * position_loss +
-            self.magnitude_weight * magnitude_loss +
-            self.gradient_weight * gradient_loss +
-            self.second_derivative_weight * curvature_error
-        )
+        # Only compute gradient terms if weights are non-zero
+        if self.gradient_weight > 0 or self.second_derivative_weight > 0:
+            # Compute gradients at predicted peak positions (not midpoint)
+            peak_positions = torch.cat([outputs[:, 0:1], outputs[:, 2:]], dim=1)
+            first_deriv, second_deriv = self.compute_gradients(signals, peak_positions)
+            
+            if self.gradient_weight > 0:
+                # Gradient loss - first derivative should be zero at peaks
+                gradient_loss = torch.mean(first_deriv ** 2)
+                total_loss += self.gradient_weight * gradient_loss
+            
+            if self.second_derivative_weight > 0:
+                # Second derivative loss - maximize negative curvature at peaks
+                curvature_error = -torch.mean(second_deriv)
+                total_loss += self.second_derivative_weight * curvature_error
         
         return total_loss 
