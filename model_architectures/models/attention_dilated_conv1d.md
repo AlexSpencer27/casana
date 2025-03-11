@@ -1,9 +1,9 @@
 # Attention Dilated Conv1D
 
-TL;DR: "I pay attention to ALL the peaks, but I'm not obsessed with physics. I just do what works! 🧠"
+TL;DR: Advanced data-driven peak detection using multi-scale CNN and attention mechanisms
 
 ## Overview
-A middle-tier model that incorporates signal processing knowledge through multi-scale convolutions and attention mechanisms, without requiring heavy physics-based priors.
+A sophisticated model that leverages deep learning techniques through multi-scale convolutions and attention mechanisms, learning signal patterns purely from data without incorporating explicit signal processing priors.
 
 ## Architecture
 
@@ -56,11 +56,11 @@ A middle-tier model that incorporates signal processing knowledge through multi-
 3. Output is always sigmoid-activated for stable training
 
 ## Advantages
-- Balanced approach between data-driven and signal processing
+- Purely data-driven approach
 - Effective multi-scale feature extraction
 - Attention mechanism helps focus on relevant signal regions
-- No heavy physics assumptions required
-- Good compromise between complexity and performance
+- Learns patterns directly from data
+- Good balance of complexity and performance
 
 ## Use Cases
 - Peak detection in time series data

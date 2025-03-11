@@ -1,6 +1,6 @@
 # Base Model
 
-TL;DR: "I'm the template everyone copies from. Not much to see here! 🏗️"
+TL;DR: Abstract base class defining common model interface and functionality
 
 ## Overview
 The BaseModel serves as the foundation for all models in the Casana project. It provides a consistent interface and common functionality that all models must implement.

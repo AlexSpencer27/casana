@@ -1,6 +1,6 @@
 # Simplest Possible Model
 
-TL;DR: "Keep It Simple, Silly! Sometimes less is more... or at least it's something! 🤷‍♂️"
+TL;DR: Minimal fully-connected architecture for baseline peak detection performance
 
 ## Overview
 The most basic model that makes minimal assumptions about the signal structure. Uses a simple two-layer fully connected architecture with dropout regularization.

@@ -1,6 +1,6 @@
-# Gradient Refinement
+# Gradient Refinement Component
 
-TL;DR: "Trust me, that peak is *slightly* to the left... 🎯"
+TL;DR: Gradient-based position refinement using local signal characteristics
 
 ## Overview
 A physics-informed module that refines peak predictions using signal gradients and curvature information. Uses iterative optimization to find the most precise peak locations.

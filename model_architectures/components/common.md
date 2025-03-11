@@ -1,6 +1,6 @@
-# Common Utilities
+# Common Utilities Component
 
-TL;DR: "I'm the utility belt - everyone needs me! 🛠️"
+TL;DR: Core utilities and shared functionality for model implementations
 
 ## Overview
 A collection of common utilities and components used across different models. Currently focuses on adaptive feature pooling for handling variable-length inputs.

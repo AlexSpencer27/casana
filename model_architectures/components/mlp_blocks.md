@@ -1,6 +1,6 @@
-# MLP Blocks
+# MLP Blocks Component
 
-TL;DR: "I'm just a bunch of neurons doing honest work! 🧱"
+TL;DR: Configurable MLP blocks with skip connections and regularization
 
 ## Overview
 A collection of Multi-Layer Perceptron (MLP) building blocks with various architectures, including skip connections and progressive layouts. Designed for flexibility and performance.

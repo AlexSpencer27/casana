@@ -1,6 +1,6 @@
-# Multi-Scale CNN
+# Multi-Scale CNN Component
 
-TL;DR: "I look at your signal from every possible angle! 🔍"
+TL;DR: Multi-scale convolutional processing for feature extraction at different resolutions
 
 ## Overview
 A convolutional neural network component that processes signals at multiple scales simultaneously using parallel convolutions with different kernel sizes. Can operate as a feature extractor or complete classifier.

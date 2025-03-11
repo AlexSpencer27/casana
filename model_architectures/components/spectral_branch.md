@@ -1,6 +1,6 @@
-# Spectral Branch
+# Spectral Branch Component
 
-TL;DR: "I see frequencies you don't even know exist! 🌈"
+TL;DR: Frequency-domain analysis for enhanced peak discrimination
 
 ## Overview
 A specialized component for processing signals in the frequency domain using windowed FFT analysis. Provides flexible spectral feature extraction with various processing modes.

@@ -1,6 +1,6 @@
 # Model Architectures Documentation
 
-This directory contains comprehensive documentation for all models and components in the Casana project. We've streamlined our architectures to focus on what really matters - getting those peaks just right! 🎯
+This directory contains comprehensive documentation for all models and components in the Casana project. We've streamlined our architectures to focus on what really matters - getting those peaks just right.
 
 ## Directory Structure
 ```
@@ -51,27 +51,27 @@ Each documentation file follows a consistent structure:
 ### Complete Architectures
 
 #### attention_dilated_conv1d.md
-TL;DR: "I pay attention to ALL the peaks, but I'm not obsessed with physics. I just do what works! 🧠"
+TL;DR: Multi-scale attention-based peak detection with signal processing priors
 - Middle-tier model incorporating signal processing knowledge
 - Multi-scale convolutions with attention mechanisms
 - No heavy physics priors required
 
 #### pinn_peak_detector.md
-TL;DR: "I'm the physics nerd who actually reads the textbooks. And yes, I'll tell you why your peaks are wrong! 🤓"
+TL;DR: Physics-informed network leveraging spectral analysis and gradient constraints
 - Physics-informed neural network
 - Hanning template matching
 - Spectral analysis and gradient-based refinement
 - Early/late region specialization
 
 #### simplest_possible.md
-TL;DR: "Keep It Simple, Silly! Sometimes less is more... or at least it's something! 🤷‍♂️"
+TL;DR: Minimal fully-connected architecture for baseline peak detection performance
 - Minimal assumptions about signal structure
 - Two-layer fully connected architecture
 - Light dropout regularization
 - Perfect for baseline comparisons
 
 #### base_model.md
-TL;DR: "I'm the template everyone copies from. Not much to see here! 🏗️"
+TL;DR: Abstract base class defining common model interface and functionality
 - Base class for all models
 - Common functionality and interfaces
 - Essential building blocks
@@ -79,31 +79,31 @@ TL;DR: "I'm the template everyone copies from. Not much to see here! 🏗️"
 ### Components
 
 #### spectral_branch.md
-TL;DR: "I see frequencies you don't even know exist! 🌈"
+TL;DR: Frequency-domain analysis for enhanced peak discrimination
 - Spectral analysis module
 - Frequency domain processing
 - Feature extraction from signal spectra
 
 #### gradient_refinement.md
-TL;DR: "Trust me, that peak is *slightly* to the left... 🎯"
+TL;DR: Gradient-based position refinement using local signal characteristics
 - Gradient-based peak position refinement
 - Fine-tuning of peak locations
 - Physics-informed corrections
 
 #### mlp_blocks.md
-TL;DR: "I'm just a bunch of neurons doing honest work! 🧱"
+TL;DR: Configurable MLP blocks with skip connections and regularization
 - Multi-layer perceptron building blocks
 - Skip connections and dropout options
 - Flexible layer configurations
 
 #### multi_scale_cnn.md
-TL;DR: "I look at your signal from every possible angle! 🔍"
+TL;DR: Multi-scale convolutional processing for feature extraction at different resolutions
 - Multi-scale convolutional components
 - Various kernel sizes and dilations
 - Feature extraction at different scales
 
 #### common.md
-TL;DR: "I'm the utility belt - everyone needs me! 🛠️"
+TL;DR: Core utilities and shared functionality for model implementations
 - Common utilities and shared components
 - Helper functions and base classes
 - Shared preprocessing tools

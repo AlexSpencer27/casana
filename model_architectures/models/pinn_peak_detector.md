@@ -1,6 +1,6 @@
-# PINN Peak Detector
+# Physics-Informed Neural Network Peak Detector
 
-TL;DR: "I'm the physics nerd who actually reads the textbooks. And yes, I'll tell you why your peaks are wrong! 🤓"
+TL;DR: Physics-informed network leveraging spectral analysis and gradient constraints
 
 ## Overview
 A Physics-Informed Neural Network (PINN) that incorporates domain knowledge through Hanning template matching, spectral analysis, and gradient-based refinement. Specializes in early and late region peak detection.
