@@ -6,7 +6,7 @@ import numpy as np
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
-from src.models.components import SpectralBranch, GradientRefinementModule, BoundedPeakOutput
+from src.models.components import SpectralBranch, GradientRefinementModule
 
 class HanningTemplateLayer(nn.Module):
     """Custom layer for template matching with Hanning windows of different widths"""
@@ -103,9 +103,6 @@ class PINNPeakDetector(BaseModel):
         # Output layer
         self.output = nn.Linear(64, 3)
         
-        # Peak output layer
-        self.peak_output = BoundedPeakOutput()
-        
         # Dropout for regularization
         self.dropout = nn.Dropout(0.2)
         
@@ -146,7 +143,7 @@ class PINNPeakDetector(BaseModel):
         # Apply gradient refinement to find exact zero-gradient points
         x = self.refine_peaks(x, x)
         
-        # Apply bounded peak output layer
-        x = self.peak_output(x)
+        # Apply sigmoid activation
+        x = torch.sigmoid(x)
         
         return x

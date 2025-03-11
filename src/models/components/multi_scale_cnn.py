@@ -15,7 +15,8 @@ class MultiScaleCNNBranch(nn.Module):
         pooling='max',
         pooling_size=2,
         activation=F.relu,
-        dropout_rate=0.3
+        dropout_rate=0.3,
+        feature_extractor_mode=False
     ):
         """
         Multi-scale CNN branch that processes input with parallel convolutions using different kernel sizes.
@@ -28,10 +29,12 @@ class MultiScaleCNNBranch(nn.Module):
             pooling_size: Size of pooling window (default: 2)
             activation: Activation function to use (default: F.relu)
             dropout_rate: Dropout rate for regularization (default: 0.3)
+            feature_extractor_mode: If True, only outputs features without classification layers (default: False)
         """
         super().__init__()
         
         self.activation = activation
+        self.feature_extractor_mode = feature_extractor_mode
         
         # Create a conv layer for each kernel size
         self.convs = nn.ModuleList([
@@ -55,17 +58,18 @@ class MultiScaleCNNBranch(nn.Module):
         # Adaptive pooling to fix output size
         self.adaptive_pool = nn.AdaptiveAvgPool1d(16)
         
-        # Fully connected layers with skip connection
-        self.fc1 = nn.Linear(64 * 16, 256)
-        self.fc2 = nn.Linear(256, 64)
-        self.fc_skip = nn.Linear(64 * 16, 64)  # Skip connection
-        self.output = nn.Linear(64, 3)
-        
-        # Regularization
-        self.dropout = nn.Dropout(dropout_rate)
-        self.bn1 = nn.BatchNorm1d(256)
-        self.bn2 = nn.BatchNorm1d(64)
-        
+        if not feature_extractor_mode:
+            # Fully connected layers with skip connection
+            self.fc1 = nn.Linear(64 * 16, 256)
+            self.fc2 = nn.Linear(256, 64)
+            self.fc_skip = nn.Linear(64 * 16, 64)  # Skip connection
+            self.output = nn.Linear(64, 3)
+            
+            # Regularization
+            self.dropout = nn.Dropout(dropout_rate)
+            self.bn1 = nn.BatchNorm1d(256)
+            self.bn2 = nn.BatchNorm1d(64)
+    
     def _get_pooling(self, pooling_type, size):
         """Get pooling layer based on type."""
         if pooling_type == 'max':
@@ -83,7 +87,10 @@ class MultiScaleCNNBranch(nn.Module):
             x: Input tensor of shape [batch_size, in_channels, signal_length]
             
         Returns:
-            Tensor of shape [batch_size, 3] with sigmoid-activated outputs
+            If feature_extractor_mode is True:
+                Tensor of shape [batch_size, channels_per_kernel * num_kernels, signal_length]
+            Else:
+                Tensor of shape [batch_size, 3] with sigmoid-activated outputs
         """
         batch_size = x.size(0)
         
@@ -93,6 +100,13 @@ class MultiScaleCNNBranch(nn.Module):
         # Concatenate along channel dimension
         x = torch.cat(conv_outputs, dim=1)
         
+        # If in feature extractor mode, return after initial convolutions
+        if self.feature_extractor_mode:
+            # Apply first pooling if defined
+            if self.pool is not None:
+                x = self.pool(x)
+            return x
+            
         # Apply first pooling if defined
         if self.pool is not None:
             x = self.pool(x)

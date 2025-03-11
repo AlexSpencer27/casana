@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
-from src.models.components import BoundedPeakOutput
 
 @register_model("simplest_possible")
 class SimplestPossible(BaseModel):
@@ -17,9 +16,6 @@ class SimplestPossible(BaseModel):
         self.fc2 = nn.Linear(64, 3)      # Output the required 3 values
         self.dropout = nn.Dropout(0.2)    # Light regularization
         
-        # Use the new layer for bounded output
-        self.peak_output = BoundedPeakOutput()
-        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Flatten the input
         x = self.flatten(x)
@@ -28,8 +24,6 @@ class SimplestPossible(BaseModel):
         x = F.relu(self.fc1(x))
         x = self.dropout(x)
         x = self.fc2(x)
-        
-        # Apply bounded output layer (handles sigmoid + midpoint)
-        x = self.peak_output(x)
+        x = torch.sigmoid(x)
         
         return x

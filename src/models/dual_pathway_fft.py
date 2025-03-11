@@ -10,8 +10,7 @@ from src.models.components import (
     SpectralBranch, 
     CrossPathwayAttention, 
     SkipConnectionMLP, 
-    AdaptiveFeaturePooling,
-    BoundedPeakOutput
+    AdaptiveFeaturePooling
 )
 
 @register_model("dual_pathway_fft")
@@ -24,10 +23,15 @@ class DualPathwayFFT(BaseModel):
             in_channels=1,
             channels_per_kernel=16,
             kernel_sizes=(7, 15, 31),
-            pooling='max'
+            pooling='max',
+            feature_extractor_mode=True  # Use as feature extractor
         )
         
-        self.conv2 = nn.Conv1d(48, 64, kernel_size=9, padding=4)
+        # Calculate number of output channels from time_branch (16 channels per kernel * 3 kernels)
+        time_branch_channels = 16 * 3  # channels_per_kernel * len(kernel_sizes)
+        
+        # Adjust conv2 input channels to match time_branch output
+        self.conv2 = nn.Conv1d(time_branch_channels, 64, kernel_size=9, padding=4)
         self.pool2 = nn.MaxPool1d(2)
         
         self.conv3 = nn.Conv1d(64, 64, kernel_size=5, padding=2)
@@ -63,9 +67,6 @@ class DualPathwayFFT(BaseModel):
         # Output layer
         self.output = nn.Linear(64, 3)
         
-        # Peak output layer
-        self.peak_output = BoundedPeakOutput()
-        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
         
@@ -88,10 +89,8 @@ class DualPathwayFFT(BaseModel):
         # Process through FC layers with skip connection
         x = self.fc_block(weighted_features)
         
-        # Output layer
+        # Output layer with sigmoid activation
         x = self.output(x)
-        
-        # Apply bounded peak output layer
-        x = self.peak_output(x)
+        x = torch.sigmoid(x)
         
         return x

@@ -3,7 +3,7 @@ curriculum:
     end_amplitude: 0.0
     epochs_to_max: 10000
     min_amplitude: 0.05
-    start_amplitude: 0.00
+    start_amplitude: 0.0
   learning_rate:
     end: 1.0e-06
     epochs_to_min: 10000
@@ -11,15 +11,15 @@ curriculum:
   loss_weights:
     epochs_to_final: 100000
     final:
-      gradient: 1.0e-10 #1.0e-05
-      magnitude: 1.0e-10 #0.01
+      gradient: 1.0e-10
+      magnitude: 1.0e-10
       position: 10.0
-      second_derivative: 1.0e-10 #1.0e-03
+      second_derivative: 1.0e-10
     start:
-      gradient: 1.0e-10 #1.0e-05
-      magnitude: 1.0e-10 #0.01
+      gradient: 1.0e-10
+      magnitude: 1.0e-10
       position: 10.0
-      second_derivative: 1.0e-10 #1.0e-03
+      second_derivative: 1.0e-10
 loss:
   name: simple_mse
 model:
@@ -27,7 +27,7 @@ model:
     base_step_size: 0.001
     enabled: false
     max_iterations: 10
-  name: multi_scale_conv1d
+  name: pinn_peak_detector
 signal:
   length: 2048
   sampling_rate: 1024
@@ -39,4 +39,4 @@ training:
   num_epochs: 1000
 visualization:
   num_predictions: 10
-  plot_frequency: 100
+  plot_frequency: 1000
