@@ -27,6 +27,109 @@ A neural network framework for detecting peaks in noisy signals, focusing on mod
 - Standardized visualizations
 - Cross-experiment comparison
 
+## Problem Analysis
+
+### Initial Challenge Decomposition
+- Signal characteristics vary significantly across samples:
+  - Peak widths: 10-40 samples 
+  - Amplitude ratios: 0.8->1.0 between peaks
+  - Inter-peak distance: Variable from 0.1-1.8 time units
+- Noise components:
+  - Complex multi-frequency interference
+  - Amplitude-varying distortions
+  - Non-uniform baseline drift
+
+## Solution Evolution
+
+### 1. Basic Feed-Forward Network
+Initial Approach:
+- Simple fully-connected architecture
+- Direct signal-to-position mapping
+- Minimal assumptions about signal structure
+
+Limitations:
+- No spatial hierarchy understanding
+- Sensitive to peak amplitude variations
+
+### 2. CNN with Attention
+Motivation:
+- Need for translation invariance
+- Multi-scale feature detection
+- Focus on relevant signal regions
+
+Design Evolution:
+- Added convolutional layers for spatial features
+- Incorporated attention mechanism
+
+Challenges:
+- Training instability with attention
+- Computational overhead
+- Complex hyperparameter tuning
+
+### 3. Physics-Informed Approach
+Integration Strategy:
+- Spectral domain constraints
+- Gradient-based peak properties
+- Signal ~physics priors
+
+Design Considerations:
+- Balance between data-driven and physics-based components
+- Integration of domain knowledge
+- Computational efficiency trade-offs
+
+Results:
+- Robust to unseen noise patterns
+- Faster convergence during training
+
+## Design Decisions
+
+### Modular Architecture
+Rationale:
+- Component isolation for testing
+- Easy experimentation with architectures
+- Reusable building blocks across models
+
+### Curriculum Learning Design
+Progression Strategy:
+- Start: Clean signals, well-separated peaks
+- Middle: Introduce gaussian noise, varying SNR
+- End: Complex noise, overlapping peaks
+
+Implementation:
+```python
+def noise_schedule(epoch):
+    return min(MAX_NOISE, BASE_NOISE * (1 + epoch/NOISE_RAMP_EPOCHS))
+```
+
+### Signal Generation
+Design Choices:
+- Parameterized peak shapes for variety
+- Physics-based noise models
+- Controlled difficulty progression
+
+Validation:
+- Statistical analysis of generated signals
+- Coverage of edge cases
+- Real-world signal comparison
+
+## Future Considerations
+
+### Scaling Strategy
+1. Performance Optimization
+   - ONNX runtime deployment
+   - Quantization-aware training
+   - Batch size optimization
+
+2. Architecture Extensions
+   - Multi-resolution processing
+   - Uncertainty estimation
+   - Online learning capabilities
+
+3. Known Limitations
+   - Peak overlap handling
+   - Extreme noise scenarios
+   - Computational complexity scaling
+
 ## Problem Statement
 Given a signal with two peaks and noise, predict:
 - First peak position
