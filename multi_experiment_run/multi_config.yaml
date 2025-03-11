@@ -2,27 +2,27 @@ base_config:
   curriculum:
     complex_noise:
       end_amplitude: 0.2
-      epochs_to_max: 10000
+      epochs_to_max: 100000
       min_amplitude: 0.05
       start_amplitude: 0.2
     learning_rate:
-      end: 1.0e-07
-      epochs_to_min: 10000
-      start: 1.0e-06
+      end: 1.0e-06
+      epochs_to_min: 100000
+      start: 1.0e-04
     loss_weights:
       epochs_to_final: 100000
       final:
-        magnitude: 1.0
+        magnitude: 0.1
         position: 10.0
         # Optional physics-informed terms (1e-10 to effectively disable)
-        gradient: 1.0e-8  # 1.0e-4 
-        second_derivative: 1.0e-6  # 1.0e-4
+        gradient: 1.0e-4  # 1.0e-4 
+        second_derivative: 1.0e-4  # 1.0e-4
       start:
-        magnitude: 1.0
+        magnitude: 0.1
         position: 10.0
         # Optional physics-informed terms (1e-10 to effectively disable)
-        gradient: 1.0e-8  # 1.0e-4 
-        second_derivative: 1.0e-6  #  1.0e-4
+        gradient: 1.0e-4  # 1.0e-4 
+        second_derivative: 1.0e-4  #  1.0e-4
   loss:
     name: peak_loss
   signal:
@@ -32,11 +32,11 @@ base_config:
     batch_size: 256
     early_stopping:
       min_delta: 0.0001
-      patience: 5000
-    num_epochs: 1000000
+      patience: 2500
+    num_epochs: 100000
   visualization:
     num_predictions: 10
-    plot_frequency: 500
+    plot_frequency: 1000
 
 experiments:
   - name: "simplest_possible"

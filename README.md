@@ -155,9 +155,10 @@ Three implementations with increasing complexity ([detailed documentation](model
 
 3. **Physics-Informed Network** ([docs](model_architectures/models/pinn_peak_detector.md))
    > Hybrid approach combining deep learning with signal processing
-   > - Spectral analysis integration
-   > - Gradient-based constraints
-   > - Explicit signal priors
+   > - Noise filtering (high-pass filter)
+   > - FFT-based template matching with 32 templates
+   > - Residual architecture with gradient refinement
+   > - Guaranteed peak ordering
 
 ### Components
 Building blocks ([component docs](model_architectures/components/)):

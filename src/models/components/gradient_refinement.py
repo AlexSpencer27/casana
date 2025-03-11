@@ -39,14 +39,14 @@ class GradientRefinementModule(nn.Module):
         batch_size = signals.shape[0]
         device = signals.device
         
-        # Scale positions to signal length
-        positions = positions * (self.signal_length - 1)
+        # Scale positions to signal length and clamp to valid range
+        positions = torch.clamp(positions * (self.signal_length - 1), 0, self.signal_length - 1)
         
         # Get indices for left and right samples
-        idx_left = torch.floor(positions).long()
-        idx_right = torch.ceil(positions).long()
+        idx_left = positions.floor().long()
+        idx_right = positions.ceil().long()
         
-        # Ensure indices are within bounds
+        # Double-check indices are within bounds (redundant but safe)
         idx_left = torch.clamp(idx_left, 0, self.signal_length - 1)
         idx_right = torch.clamp(idx_right, 0, self.signal_length - 1)
         
@@ -54,9 +54,14 @@ class GradientRefinementModule(nn.Module):
         batch_indices = torch.arange(batch_size, device=device).unsqueeze(1)
         batch_indices = batch_indices.expand(-1, positions.size(1))
         
+        # Reshape indices for gather operation
+        batch_indices = batch_indices.contiguous()
+        idx_left = idx_left.contiguous()
+        idx_right = idx_right.contiguous()
+        
         # Sample values using gathered indices
-        values_left = signals[batch_indices, idx_left]
-        values_right = signals[batch_indices, idx_right]
+        values_left = signals[batch_indices.view(-1), idx_left.view(-1)].view(batch_size, -1)
+        values_right = signals[batch_indices.view(-1), idx_right.view(-1)].view(batch_size, -1)
         
         # Linear interpolation weights
         weights_right = positions - idx_left.float()
@@ -77,7 +82,10 @@ class GradientRefinementModule(nn.Module):
         Returns:
             Tuple of (gradients, curvatures) each of shape [batch_size, num_peaks]
         """
-        eps = 0.01  # Small offset for finite difference
+        eps = 0.005  # Smaller offset for more precise finite difference
+        
+        # Ensure positions are within valid range for offset calculations
+        positions = torch.clamp(positions, eps, 1.0 - eps)
         
         # Sample values at current positions and offsets
         values = self._sample_signal_values(signals, positions)
@@ -89,6 +97,9 @@ class GradientRefinementModule(nn.Module):
         
         # Calculate curvatures using second derivative
         curvatures = (values_right + values_left - 2 * values) / (eps * eps)
+        
+        # Add small epsilon to curvatures for numerical stability
+        curvatures = torch.clamp(curvatures, min=-1e3, max=1e3)
         
         return gradients, curvatures
     
@@ -110,21 +121,34 @@ class GradientRefinementModule(nn.Module):
         # Initialize refined positions with initial predictions
         positions = initial_predictions.clone()
         
+        # Track previous positions for convergence check
+        prev_positions = positions.clone()
+        
         # Iterative refinement
-        for _ in range(self.max_iterations):
+        for iter_idx in range(self.max_iterations):
             # Calculate gradients and curvatures
             gradients, curvatures = self._calculate_gradients_and_curvatures(
                 signals, positions
             )
             
-            # Update positions using Newton's method
-            # We want to find where gradient is zero, so move in direction of -gradient/curvature
-            step = -gradients / (curvatures + 1e-6)  # Add small epsilon for stability
+            # Update positions using Newton's method with adaptive step size
+            step = -gradients / (torch.abs(curvatures) + 1e-6)
+            
+            # Clamp step size for stability
+            step = torch.clamp(step, -0.1, 0.1)
             
             # Apply step size and update positions
             positions = positions + self.base_step_size * step
             
             # Clamp positions to [0, 1] range
             positions = torch.clamp(positions, 0.0, 1.0)
+            
+            # Check for convergence
+            pos_change = torch.abs(positions - prev_positions).max()
+            if pos_change < 1e-5:
+                break
+                
+            prev_positions = positions.clone()
         
-        return positions 
+        # Ensure output has same device as input
+        return positions.to(initial_predictions.device) 

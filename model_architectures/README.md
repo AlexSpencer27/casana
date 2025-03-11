@@ -57,11 +57,11 @@ TL;DR: Multi-scale attention-based peak detection with signal processing priors
 - No heavy physics priors required
 
 #### pinn_peak_detector.md
-TL;DR: Physics-informed network leveraging spectral analysis and gradient constraints
-- Physics-informed neural network
-- Hanning template matching
-- Spectral analysis and gradient-based refinement
-- Early/late region specialization
+TL;DR: Physics-informed network with noise filtering and FFT-based template matching
+- Noise filtering with high-pass filter
+- 32 Hanning templates for peak detection
+- Residual architecture with gradient refinement
+- Guaranteed peak ordering
 
 #### simplest_possible.md
 TL;DR: Minimal fully-connected architecture for baseline peak detection performance
