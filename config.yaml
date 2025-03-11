@@ -1,9 +1,9 @@
 curriculum:
   complex_noise:
-    end_amplitude: 0.02
+    end_amplitude: 0.2
     epochs_to_max: 10000
     min_amplitude: 0.05
-    start_amplitude: 0.02
+    start_amplitude: 0.2
   learning_rate:
     end: 1.0e-07
     epochs_to_min: 10000
@@ -11,28 +11,28 @@ curriculum:
   loss_weights:
     epochs_to_final: 100000
     final:
-      gradient: 1.0e-10
+      gradient: 1.0e-08
       magnitude: 1.0
       position: 10.0
-      second_derivative: 1.0e-10
+      second_derivative: 1.0e-06
     start:
-      gradient: 1.0e-10
+      gradient: 1.0e-08
       magnitude: 1.0
       position: 10.0
-      second_derivative: 1.0e-10
+      second_derivative: 1.0e-06
 loss:
   name: peak_loss
 model:
-  name: pinn_peak_detector
+  name: simplest_possible
 signal:
   length: 2048
   sampling_rate: 1024
 training:
-  batch_size: 32
+  batch_size: 256
   early_stopping:
     min_delta: 0.0001
     patience: 5000
-  num_epochs: 100
+  num_epochs: 1000000
 visualization:
   num_predictions: 10
-  plot_frequency: 100
+  plot_frequency: 500
