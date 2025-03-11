@@ -1,132 +1,130 @@
 """
-Gradient refinement module for peak position refinement using gradient information.
+Gradient refinement module for improving peak predictions using signal gradients.
 """
 
 import torch
 import torch.nn as nn
-import math
+import torch.nn.functional as F
 
 class GradientRefinementModule(nn.Module):
-    def __init__(self, signal_length, base_step_size=0.002, max_iterations=50):
+    def __init__(self, signal_length, base_step_size=0.002, max_iterations=7):
         """
-        Refine peak positions using gradient information.
+        Initialize gradient refinement module.
         
         Args:
-            signal_length: Signal length
-            base_step_size: Step size for gradient updates (default: 0.002)
-            max_iterations: Maximum number of refinement iterations (default: 50)
+            signal_length: Length of input signal
+            base_step_size: Base learning rate for gradient updates (default: 0.002)
+            max_iterations: Maximum number of refinement iterations (default: 7)
         """
         super().__init__()
         self.signal_length = signal_length
         self.base_step_size = base_step_size
         self.max_iterations = max_iterations
-        self.min_delta = 1e-4  # Convergence criterion
-        self.derivative_step = 0.01  # 1% of normalized range
         
-        # Fixed parameters with good defaults
-        self.momentum = 0.8  # Lower momentum for noisy signals
-        self.trust_region_radius = 0.15  # Allows movement while preventing jumps
-        
-        # Window size based on signal characteristics (peaks are 2-8% of signal)
-        window_size_proportion = 0.08  # Match maximum peak width
-        min_window_size = 10  # Minimum peak width
-        self.window_size = max(min_window_size, int(signal_length * window_size_proportion))
-
+        # Create position indices for gradient calculation
+        pos_indices = torch.arange(signal_length, dtype=torch.float32)
+        self.register_buffer('pos_indices', pos_indices)
+    
     def _sample_signal_values(self, signals, positions):
         """
         Sample signal values at given positions using linear interpolation.
         
         Args:
-            signals: Input signals of shape (batch_size, signal_length)
-            positions: Positions to sample at, normalized to [0,1] (batch_size,)
+            signals: Input signals of shape [batch_size, signal_length]
+            positions: Positions to sample at of shape [batch_size, num_peaks]
             
         Returns:
-            Sampled values of shape (batch_size,)
+            Sampled values of shape [batch_size, num_peaks]
         """
-        indices = positions * (signals.shape[1] - 1)
-        idx_left = torch.floor(indices).long()
-        idx_right = torch.ceil(indices).long()
-        idx_left = torch.clamp(idx_left, 0, signals.shape[1] - 1)
-        idx_right = torch.clamp(idx_right, 0, signals.shape[1] - 1)
-        weights_right = indices - idx_left.float()
+        batch_size = signals.shape[0]
+        device = signals.device
+        
+        # Scale positions to signal length
+        positions = positions * (self.signal_length - 1)
+        
+        # Get indices for left and right samples
+        idx_left = torch.floor(positions).long()
+        idx_right = torch.ceil(positions).long()
+        
+        # Ensure indices are within bounds
+        idx_left = torch.clamp(idx_left, 0, self.signal_length - 1)
+        idx_right = torch.clamp(idx_right, 0, self.signal_length - 1)
+        
+        # Create batch indices for gathering
+        batch_indices = torch.arange(batch_size, device=device).unsqueeze(1)
+        batch_indices = batch_indices.expand(-1, positions.size(1))
+        
+        # Sample values using gathered indices
+        values_left = signals[batch_indices, idx_left]
+        values_right = signals[batch_indices, idx_right]
+        
+        # Linear interpolation weights
+        weights_right = positions - idx_left.float()
         weights_left = 1.0 - weights_right
-        values_left = signals[torch.arange(signals.shape[0]), idx_left]
-        values_right = signals[torch.arange(signals.shape[0]), idx_right]
-        return values_left * weights_left + values_right * weights_right
+        
+        # Interpolate values
+        interpolated = weights_left * values_left + weights_right * values_right
+        return interpolated
     
-    def _calculate_gradients_and_curvatures(self, signal, positions):
+    def _calculate_gradients_and_curvatures(self, signals, positions):
         """
-        Calculate gradients and curvatures at specified positions using interpolation.
+        Calculate gradients and curvatures at peak positions.
         
         Args:
-            signal: Tensor of shape [batch_size, signal_length]
-            positions: Tensor of shape [batch_size] with values in [0, 1]
+            signals: Input signals of shape [batch_size, signal_length]
+            positions: Peak positions of shape [batch_size, num_peaks]
             
         Returns:
-            gradients: Tensor of shape [batch_size]
-            curvatures: Tensor of shape [batch_size]
+            Tuple of (gradients, curvatures) each of shape [batch_size, num_peaks]
         """
-        pos_left = torch.clamp(positions - self.derivative_step, 0, 1)
-        pos_right = torch.clamp(positions + self.derivative_step, 0, 1)
-        values = self._sample_signal_values(signal, positions)
-        values_left = self._sample_signal_values(signal, pos_left)
-        values_right = self._sample_signal_values(signal, pos_right)
-        gradients = (values_right - values_left) / (2 * self.derivative_step)
-        curvatures = (values_right - 2 * values + values_left) / (self.derivative_step * self.derivative_step)
+        eps = 0.01  # Small offset for finite difference
+        
+        # Sample values at current positions and offsets
+        values = self._sample_signal_values(signals, positions)
+        values_left = self._sample_signal_values(signals, positions - eps)
+        values_right = self._sample_signal_values(signals, positions + eps)
+        
+        # Calculate gradients using central difference
+        gradients = (values_right - values_left) / (2 * eps)
+        
+        # Calculate curvatures using second derivative
+        curvatures = (values_right + values_left - 2 * values) / (eps * eps)
+        
         return gradients, curvatures
     
-    def forward(self, signal, peak_positions):
+    def forward(self, initial_predictions, signals):
         """
-        Refine peak positions using adaptive gradient information.
+        Refine peak predictions using gradient information.
         
         Args:
-            signal: Input signal of shape [batch_size, signal_length]
-            peak_positions: Initial peak positions of shape [batch_size, 3]
-                           with values in [0, 1] representing normalized positions
-                           
+            initial_predictions: Initial peak predictions of shape [batch_size, 3]
+            signals: Input signals of shape [batch_size, signal_length] or [batch_size, 1, signal_length]
+            
         Returns:
-            Refined peak positions of shape [batch_size, 3]
+            Refined predictions of shape [batch_size, 3]
         """
-        batch_size = signal.shape[0]
-        current_positions = peak_positions.clone()
-        
-        # Track convergence for each peak separately
-        converged = torch.zeros((batch_size, 2), dtype=torch.bool, device=signal.device)
-        iteration = 0
-        
-        while not converged.all() and iteration < self.max_iterations:
-            # Calculate gradients and curvatures for non-converged peaks
-            updates = torch.zeros_like(current_positions)
+        # Ensure signals has correct shape [batch_size, signal_length]
+        if signals.dim() == 3:
+            signals = signals.squeeze(1)
             
-            for peak_idx, pos_idx in [(0, 0), (1, 2)]:  # Peak indices 0 and 2 (1 is midpoint)
-                # Only update non-converged peaks
-                active_peaks = ~converged[:, peak_idx]
-                if active_peaks.any():
-                    gradients, curvatures = self._calculate_gradients_and_curvatures(
-                        signal[active_peaks], current_positions[active_peaks, pos_idx]
-                    )
-                    
-                    # Update positions using gradient information
-                    peak_updates = -self.base_step_size * gradients * (curvatures < 0).float()
-                    updates[active_peaks, pos_idx] = peak_updates
-                    
-                    # Check convergence for this peak
-                    converged[active_peaks, peak_idx] = torch.abs(peak_updates) < self.min_delta
-            
-            # Update midpoint
-            updates[:, 1] = (updates[:, 0] + updates[:, 2]) / 2
-            
-            # Apply updates with bounds checking
-            new_positions = torch.clamp(current_positions + updates, 0.0, 1.0)
-            current_positions = new_positions
-            iteration += 1
+        # Initialize refined positions with initial predictions
+        positions = initial_predictions.clone()
         
-        # Ensure proper ordering
-        is_ordered = current_positions[:, 0] < current_positions[:, 2]
-        swapped = torch.stack([
-            current_positions[:, 2],
-            (current_positions[:, 0] + current_positions[:, 2]) / 2,
-            current_positions[:, 0]
-        ], dim=1)
+        # Iterative refinement
+        for _ in range(self.max_iterations):
+            # Calculate gradients and curvatures
+            gradients, curvatures = self._calculate_gradients_and_curvatures(
+                signals, positions
+            )
+            
+            # Update positions using Newton's method
+            # We want to find where gradient is zero, so move in direction of -gradient/curvature
+            step = -gradients / (curvatures + 1e-6)  # Add small epsilon for stability
+            
+            # Apply step size and update positions
+            positions = positions + self.base_step_size * step
+            
+            # Clamp positions to [0, 1] range
+            positions = torch.clamp(positions, 0.0, 1.0)
         
-        return torch.where(is_ordered.unsqueeze(1), current_positions, swapped) 
+        return positions 

@@ -21,11 +21,7 @@ def get_loss(name: str) -> Type[BaseLoss]:
         raise ValueError(f"Unknown loss function: {name}")
     return _LOSS_REGISTRY[name]
 
-# Import all loss functions
-from src.losses.gradient_aware_loss import PeakLoss
+# Import our unified peak loss function
+from src.losses.peak_loss import PeakLoss
 
 __all__ = ['get_loss', 'register_loss', 'PeakLoss']
-
-# Import loss functions to register them
-from .simple_mse import SimpleMSELoss
-from .gradient_aware_loss import GradientAwareLoss 

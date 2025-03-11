@@ -20,7 +20,8 @@ class AttentionDilatedConv1D(BaseModel):
             in_channels=1,
             channels_per_kernel=16,
             kernel_sizes=(7, 15, 31),
-            pooling=None
+            pooling=None,
+            feature_extractor_mode=True  # Only extract features, don't classify
         )
         
         # Calculate number of channels from multi_scale_branch
@@ -57,12 +58,16 @@ class AttentionDilatedConv1D(BaseModel):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
         
+        # Ensure input is in the correct shape [batch_size, channels, length]
+        if x.dim() == 2:
+            x = x.unsqueeze(1)  # Add channel dimension
+        
         # Multi-scale time domain processing
-        x = self.multi_scale_branch(x)
+        x = self.multi_scale_branch(x)  # Output shape: [batch_size, 48, signal_length]
         
         # Apply channel attention
-        channel_weights = self.channel_attention(x)
-        x = x * channel_weights.view(batch_size, -1, 1)
+        channel_weights = self.channel_attention(x)  # Output shape: [batch_size, 48]
+        x = x * channel_weights.view(batch_size, -1, 1)  # Broadcasting across signal length
         
         # Dilated convolution and pooling
         x = F.relu(self.dilated_conv(x))

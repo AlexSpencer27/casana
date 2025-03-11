@@ -66,7 +66,7 @@ class PINNPeakDetector(BaseModel):
         self.output = nn.Linear(64, 3)
         
         # Gradient refinement module
-        self.gradient_refiner = GradientRefinementModule()
+        self.gradient_refiner = GradientRefinementModule(signal_length=self.signal_length)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
@@ -118,6 +118,10 @@ class HanningTemplateLayer(nn.Module):
         self.template_weights = nn.Parameter(torch.ones(num_templates))
         
     def forward(self, x):
+        # Handle both 2D and 3D input tensors
+        if x.dim() == 3:  # [batch_size, channels, signal_length]
+            x = x.squeeze(1)  # Remove channel dimension if present
+        
         batch_size, signal_length = x.shape
         all_correlations = []
         

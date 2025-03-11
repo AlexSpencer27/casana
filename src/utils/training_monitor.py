@@ -9,8 +9,6 @@ import torch
 
 from src.config.config import config
 from src.losses import get_loss
-from src.losses.gradient_aware_loss import GradientAwareLoss
-from src.losses.simple_mse import SimpleMSELoss
 
 class TrainingMonitor:
     """A class to monitor and visualize training progress."""
@@ -512,14 +510,10 @@ class TrainingMonitor:
         with torch.no_grad():
             position_loss, magnitude_loss = self.criterion.compute_position_and_magnitude_losses(outputs, targets, signals)
             # only do if gradient_aware loss
-            if isinstance(self.criterion, GradientAwareLoss):
-                peak_positions = torch.cat([outputs[:, 0:1], outputs[:, 2:]], dim=1)
-                first_deriv, second_deriv = self.criterion.compute_gradients(signals, peak_positions)
-                gradient_loss = torch.mean(first_deriv ** 2)
-                curvature_loss = -torch.mean(second_deriv)
-            else:
-                gradient_loss = torch.tensor(0.0)
-                curvature_loss = torch.tensor(0.0)
+            peak_positions = torch.cat([outputs[:, 0:1], outputs[:, 2:]], dim=1)
+            first_deriv, second_deriv = self.criterion.compute_gradients(signals, peak_positions)
+            gradient_loss = torch.mean(first_deriv ** 2)
+            curvature_loss = -torch.mean(second_deriv)
         
         loss_components = {
             'position': position_loss.item(),
