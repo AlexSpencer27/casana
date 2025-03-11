@@ -1,22 +1,27 @@
-from typing import Dict, Type
-import torch.nn as nn
+"""
+Loss functions for training models.
+"""
 
-# Registry to store loss function classes
-LOSS_REGISTRY: Dict[str, Type[nn.Module]] = {}
+from typing import Callable, Dict, Type
+from src.losses.base_loss import BaseLoss
 
-def register_loss(name: str):
-    """Decorator to register a loss function class"""
-    def decorator(cls):
-        LOSS_REGISTRY[name] = cls
+# Registry to store loss functions
+_LOSS_REGISTRY: Dict[str, Type[BaseLoss]] = {}
+
+def register_loss(name: str) -> Callable:
+    """Decorator to register a loss function."""
+    def _register(cls: Type[BaseLoss]) -> Type[BaseLoss]:
+        _LOSS_REGISTRY[name] = cls
         return cls
-    return decorator
+    return _register
 
-def get_loss(name: str) -> Type[nn.Module]:
-    """Get a loss function class by name"""
-    if name not in LOSS_REGISTRY:
-        raise ValueError(f"Loss function {name} not found in registry. Available losses: {list(LOSS_REGISTRY.keys())}")
-    return LOSS_REGISTRY[name]
+def get_loss(name: str) -> Type[BaseLoss]:
+    """Get a loss function by name."""
+    if name not in _LOSS_REGISTRY:
+        raise ValueError(f"Unknown loss function: {name}")
+    return _LOSS_REGISTRY[name]
 
-# Import loss functions to register them
-from .simple_mse import SimpleMSELoss
-from .gradient_aware_loss import GradientAwareLoss 
+# Import our unified peak loss function
+from src.losses.peak_loss import PeakLoss
+
+__all__ = ['get_loss', 'register_loss', 'PeakLoss']

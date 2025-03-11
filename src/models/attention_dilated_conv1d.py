@@ -5,87 +5,79 @@ import torch.nn.functional as F
 from src.config.config import config
 from src.models import register_model
 from src.models.base_model import BaseModel
+from src.models.components import MultiScaleCNNBranch, SkipConnectionMLP, AdaptiveFeaturePooling
 
 @register_model("attention_dilated_conv1d")
 class AttentionDilatedConv1D(BaseModel):
+    """Middle-tier model that incorporates signal processing knowledge through multi-scale 
+    convolutions and attention, without requiring heavy physics-based priors."""
+    
     def __init__(self) -> None:
         super().__init__()
         
-        # Multi-scale convolution layers
-        self.conv1_small = nn.Conv1d(1, 16, kernel_size=7, padding=3)
-        self.conv1_medium = nn.Conv1d(1, 16, kernel_size=15, padding=7)
-        self.conv1_large = nn.Conv1d(1, 16, kernel_size=31, padding=15)
+        # Multi-scale convolution branch
+        self.multi_scale_branch = MultiScaleCNNBranch(
+            in_channels=1,
+            channels_per_kernel=16,
+            kernel_sizes=(7, 15, 31),
+            pooling=None,
+            feature_extractor_mode=True  # Only extract features, don't classify
+        )
         
-        # Attention mechanism for feature weighting
-        self.attention_conv = nn.Conv1d(48, 48, kernel_size=7, padding=3)
+        # Calculate number of channels from multi_scale_branch
+        time_branch_channels = 16 * 3  # channels_per_kernel * len(kernel_sizes)
         
-        self.pool1 = nn.MaxPool1d(2)
+        # Channel attention mechanism
+        self.channel_attention = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),
+            nn.Flatten(),
+            nn.Linear(time_branch_channels, time_branch_channels // 2),
+            nn.ReLU(),
+            nn.Linear(time_branch_channels // 2, time_branch_channels),
+            nn.Sigmoid()
+        )
         
-        # Dilated convolution layer after concatenation
-        self.dilated_conv = nn.Conv1d(48, 64, kernel_size=5, padding=4, dilation=2)
-        self.pool2 = nn.MaxPool1d(2)
-        
-        # Third convolution layer
-        self.conv3 = nn.Conv1d(64, 64, kernel_size=5, padding=2)
+        # Dilated convolution layer for capturing wider temporal dependencies
+        self.dilated_conv = nn.Conv1d(time_branch_channels, 64, kernel_size=5, padding=4, dilation=2)
+        self.pool = nn.MaxPool1d(4)  # Combined pooling layers
         
         # Adaptive pooling to fix output size
-        self.adaptive_pool = nn.AdaptiveAvgPool1d(16)
+        self.adaptive_pool = AdaptiveFeaturePooling(output_size=16, pooling_type='avg')
         
         # Fully connected layers with skip connection
-        self.fc1 = nn.Linear(64 * 16, 256)
-        self.fc2 = nn.Linear(256, 64)
-        self.fc_skip = nn.Linear(64 * 16, 64)  # Skip connection
-        self.output = nn.Linear(64, 3)
+        self.fc_block = SkipConnectionMLP(
+            input_dim=64 * 16,
+            hidden_dim=256,
+            output_dim=64,
+            dropout_rate=0.3
+        )
         
-        # Regularization
-        self.dropout = nn.Dropout(0.3)
-        self.bn1 = nn.BatchNorm1d(256)
-        self.bn2 = nn.BatchNorm1d(64)
+        # Output layer
+        self.output = nn.Linear(64, 3)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.size(0)
         
+        # Ensure input is in the correct shape [batch_size, channels, length]
+        if x.dim() == 2:
+            x = x.unsqueeze(1)  # Add channel dimension
+        
         # Multi-scale time domain processing
-        t_small = F.relu(self.conv1_small(x))
-        t_medium = F.relu(self.conv1_medium(x))
-        t_large = F.relu(self.conv1_large(x))
+        x = self.multi_scale_branch(x)  # Output shape: [batch_size, 48, signal_length]
         
-        # Concatenate multi-scale features
-        x = torch.cat([t_small, t_medium, t_large], dim=1)
+        # Apply channel attention
+        channel_weights = self.channel_attention(x)  # Output shape: [batch_size, 48]
+        x = x * channel_weights.view(batch_size, -1, 1)  # Broadcasting across signal length
         
-        # Apply attention mechanism
-        attention_weights = torch.sigmoid(self.attention_conv(x))
-        x = x * attention_weights
-        
-        x = self.pool1(x)
-        
-        # Dilated convolution block
+        # Dilated convolution and pooling
         x = F.relu(self.dilated_conv(x))
-        x = self.pool2(x)
-        
-        # Third convolution block
-        x = F.relu(self.conv3(x))
+        x = self.pool(x)
         x = self.adaptive_pool(x)
         
-        # Flatten features
+        # Flatten and process through FC layers
         x = x.view(batch_size, -1)
+        x = self.fc_block(x)
         
-        # Main path through FC layers
-        main = F.relu(self.bn1(self.fc1(x)))
-        main = self.dropout(main)
-        main = F.relu(self.bn2(self.fc2(main)))
-        
-        # Skip connection
-        skip = F.relu(self.fc_skip(x))
-        
-        # Combine main path and skip connection
-        x = main + skip
-        x = self.dropout(x)
-        
-        # Output layer
+        # Output with sigmoid activation
         x = self.output(x)
-        
-        # Ensure peak1 < midpoint < peak2 using soft constraints
-        sorted_x = x + 0.1 * (torch.sort(x, dim=1)[0] - x)
-        
-        return sorted_x
+        return torch.sigmoid(x)

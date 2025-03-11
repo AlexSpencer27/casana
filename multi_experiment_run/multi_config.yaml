@@ -1,39 +1,53 @@
 base_config:
+  curriculum:
+    complex_noise:
+      end_amplitude: 0.2
+      epochs_to_max: 100000
+      min_amplitude: 0.05
+      start_amplitude: 0.2
+    learning_rate:
+      end: 1.0e-06
+      epochs_to_min: 100000
+      start: 1.0e-04
+    loss_weights:
+      epochs_to_final: 100000
+      final:
+        magnitude: 0.1
+        position: 10.0
+        # Optional physics-informed terms (1e-10 to effectively disable)
+        gradient: 1.0e-4  # 1.0e-4 
+        second_derivative: 1.0e-4  # 1.0e-4
+      start:
+        magnitude: 0.1
+        position: 10.0
+        # Optional physics-informed terms (1e-10 to effectively disable)
+        gradient: 1.0e-4  # 1.0e-4 
+        second_derivative: 1.0e-4  #  1.0e-4
+  loss:
+    name: peak_loss
   signal:
     length: 2048
     sampling_rate: 1024
+  training:
+    batch_size: 256
+    early_stopping:
+      min_delta: 0.0001
+      patience: 2500
+    num_epochs: 100000
   visualization:
     num_predictions: 10
-  training:
-    batch_size: 32
-    num_epochs: 100
-    learning_rate: 0.0001
-    early_stopping:
-      patience: 10
-      min_delta: 0.0001  
+    plot_frequency: 1000
 
 experiments:
-  - name: "simple_model_test"
+  - name: "simplest_possible"
     model:
       name: "simplest_possible"
-
-  - name: "dual_pathway_fft"
-    model:
-      name: "dual_pathway_fft"
-      
-  - name: "multi_scale_conv1d"
-    model:
-      name: "multi_scale_conv1d"
 
   - name: "attention_dilated_conv1d"
     model:
       name: "attention_dilated_conv1d"
 
-  - name: "transformer_conv1d"
+  - name: "pinn_peak_detector"
     model:
-      name: "transformer_conv1d"
-
-  - name: "spectral_peak_detector"
-    model:
-      name: "spectral_peak_detector"
+      name: "pinn_peak_detector"
     

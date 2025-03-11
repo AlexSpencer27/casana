@@ -30,19 +30,22 @@ class ExperimentTracker:
         
         # Initialize evaluation criterion
         loss_class = get_loss(config.loss.name)
-        self.criterion = loss_class()
+        self.criterion = loss_class()  # Note: Will be moved to device when evaluate_model is called
     
-    def evaluate_model(self, model: nn.Module, final_loss: float) -> None:
+    def evaluate_model(self, model: nn.Module, final_loss: float, device: torch.device) -> None:
         """Evaluate model on test batch and save results.
         
         Args:
             model: The trained model to evaluate
             final_loss: Final training loss
+            device: Device to run evaluation on
         """
         print("\nEvaluating final predictions...")
         
-        # Generate test batch
+        # Generate test batch and move to device
         signals, targets = generate_batch()
+        signals, targets = signals.to(device), targets.to(device)
+        self.criterion = self.criterion.to(device)
         model.eval()
         
         with torch.no_grad():
@@ -134,7 +137,11 @@ class ExperimentTracker:
             "hyperparameters": {
                 "num_epochs": config.training.num_epochs,
                 "batch_size": config.training.batch_size,
-                "learning_rate": config.training.learning_rate
+                "learning_rate": {
+                    "start": config.curriculum.learning_rate.start,
+                    "end": config.curriculum.learning_rate.end,
+                    "epochs_to_min": config.curriculum.learning_rate.epochs_to_min
+                }
             },
             "training": {
                 "final_loss": float(final_loss)

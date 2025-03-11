@@ -44,4 +44,3 @@ poetry.lock
 
 # Experiments
 experiments/
-best_model_results/

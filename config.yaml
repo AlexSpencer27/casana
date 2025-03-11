@@ -1,22 +1,38 @@
+curriculum:
+  complex_noise:
+    end_amplitude: 0.2
+    epochs_to_max: 100000
+    min_amplitude: 0.05
+    start_amplitude: 0.2
+  learning_rate:
+    end: 1.0e-06
+    epochs_to_min: 100000
+    start: 1.0e-05
+  loss_weights:
+    epochs_to_final: 100000
+    final:
+      gradient: 0.00001
+      magnitude: 0.01
+      position: 10.0
+      second_derivative: 0.00001
+    start:
+      gradient: 0.00001
+      magnitude: 0.01
+      position: 10.0
+      second_derivative: 0.00001
+loss:
+  name: peak_loss
 model:
-  name: multi_scale_conv1d
+  name: pinn_peak_detector
 signal:
   length: 2048
   sampling_rate: 1024
 training:
-  batch_size: 32
+  batch_size: 1024
   early_stopping:
     min_delta: 0.0001
-    patience: 1000
-  learning_rate: 0.001
-  num_epochs: 1000000
-loss:
-  name: gradient_aware
-  # Common weights for both loss functions
-  position_weight: 1.0
-  magnitude_weight: 0.5
-  # Gradient-aware specific weights
-  gradient_weight: 0.3
-  second_derivative_weight: 0.2
+    patience: 2444
+  num_epochs: 24444
 visualization:
   num_predictions: 10
+  plot_frequency: 100
