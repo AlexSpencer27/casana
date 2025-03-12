@@ -8,7 +8,7 @@ This directory contains performance metrics for three peak detection model archi
 |-------|------------|---------------------|------------------|
 | PINN Peak Detector | 1.5M | 1.35 | 0.81 |
 | Attention Dilated Conv1D | 412K | 4.90 | 2.87 |
-| Simplest Possible | 131K | 5.21 | 6.23 |
+| Simplest Possible | 131K | 5.21 | 6.23 | 
 
 
 ## Key Findings
