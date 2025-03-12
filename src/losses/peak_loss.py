@@ -96,5 +96,8 @@ class PeakLoss(BaseLoss):
                 # Second derivative loss - maximize negative curvature at peaks
                 curvature_error = -torch.mean(second_deriv)
                 total_loss += self.second_derivative_weight * curvature_error
+
+        # normalize loss by sum of weights
+        total_loss /= (self.position_weight + self.magnitude_weight + self.gradient_weight + self.second_derivative_weight)
         
         return total_loss 
