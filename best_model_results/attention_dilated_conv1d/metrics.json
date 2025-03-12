@@ -1,32 +1,32 @@
 {
-  "timestamp": "2025-03-11T14:46:59.945065",
+  "timestamp": "2025-03-12T09:21:20.329906",
   "model": {
     "name": "attention_dilated_conv1d",
     "num_parameters": 412235
   },
   "hyperparameters": {
-    "num_epochs": 100000,
+    "num_epochs": 88888,
     "batch_size": 256,
     "learning_rate": {
-      "start": 0.0001,
+      "start": 1e-05,
       "end": 1e-06,
-      "epochs_to_min": 100000
+      "epochs_to_min": 44444
     }
   },
   "training": {
-    "final_loss": 0.11860062927007675
+    "final_loss": 0.0048966617323458195
   },
   "evaluation_metrics": {
-    "eval_loss": 0.2120024561882019,
+    "eval_loss": 0.0028700416442006826,
     "position_errors": {
-      "peak1_error": 0.09474815428256989,
-      "midpoint_error": 0.03759010136127472,
-      "peak2_error": 0.09023531526327133
+      "peak1_error": 0.026625510305166245,
+      "midpoint_error": 0.026194468140602112,
+      "peak2_error": 0.04861249402165413
     },
     "magnitude_errors": {
-      "peak1_magnitude_error": 0.9927693009376526,
-      "midpoint_magnitude_error": 0.15026387572288513,
-      "peak2_magnitude_error": 0.7655909657478333
+      "peak1_magnitude_error": 0.8457896113395691,
+      "midpoint_magnitude_error": 0.11600834876298904,
+      "peak2_magnitude_error": 0.7390175461769104
     }
   }
 }

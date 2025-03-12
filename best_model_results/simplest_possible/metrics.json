@@ -1,32 +1,32 @@
 {
-  "timestamp": "2025-03-11T14:36:31.815358",
+  "timestamp": "2025-03-12T08:59:38.115590",
   "model": {
     "name": "simplest_possible",
     "num_parameters": 131331
   },
   "hyperparameters": {
-    "num_epochs": 100000,
+    "num_epochs": 88888,
     "batch_size": 256,
     "learning_rate": {
-      "start": 0.0001,
+      "start": 1e-05,
       "end": 1e-06,
-      "epochs_to_min": 100000
+      "epochs_to_min": 44444
     }
   },
   "training": {
-    "final_loss": 0.10970360040664673
+    "final_loss": 0.005214877892285585
   },
   "evaluation_metrics": {
-    "eval_loss": 0.18128430843353271,
+    "eval_loss": 0.006229908671230078,
     "position_errors": {
-      "peak1_error": 0.06505760550498962,
-      "midpoint_error": 0.04277787730097771,
-      "peak2_error": 0.11068962514400482
+      "peak1_error": 0.06073356419801712,
+      "midpoint_error": 0.03883615881204605,
+      "peak2_error": 0.05887794494628906
     },
     "magnitude_errors": {
-      "peak1_magnitude_error": 0.9165903329849243,
-      "midpoint_magnitude_error": 0.18032336235046387,
-      "peak2_magnitude_error": 0.7758573889732361
+      "peak1_magnitude_error": 0.9198707938194275,
+      "midpoint_magnitude_error": 0.10296018421649933,
+      "peak2_magnitude_error": 0.7165372967720032
     }
   }
 }

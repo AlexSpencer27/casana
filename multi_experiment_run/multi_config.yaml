@@ -2,34 +2,34 @@ base_config:
   curriculum:
     complex_noise:
       end_amplitude: 0.2
-      epochs_to_max: 88888
+      epochs_to_max: 22222
       min_amplitude: 0.05
-      start_amplitude: 0.2
+      start_amplitude: 0.05
     learning_rate:
-      end: 1.0e-05
-      epochs_to_min: 88888
-      start: 1.0e-04
+      end: 1.0e-06
+      epochs_to_min: 44444
+      start: 1.0e-05
     loss_weights:
-      epochs_to_final: 88888
+      epochs_to_final: 22222
       final:
         gradient: 0.0001
         magnitude: 0.05
         position: 10.0
         second_derivative: 0.0001
       start:
-        gradient: 0.0001
-        magnitude: 0.05
+        gradient: 0.00001
+        magnitude: 0.005
         position: 10.0
-        second_derivative: 0.0001
+        second_derivative: 0.00001
   loss:
     name: peak_loss
   signal:
     length: 2048
     sampling_rate: 1024
   training:
-    batch_size: 1024
+    batch_size: 256
     early_stopping:
-      min_delta: 0.0001
+      min_delta: 1.0e-08
       patience: 2222
     num_epochs: 88888
   visualization:
