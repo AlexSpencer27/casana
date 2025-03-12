@@ -1,134 +1,24 @@
 # Neural Network Signal Peak Detection
 
+## Table of Contents
+- [Overview](#overview)
+- [Problem Statement](#problem-statement)
+- [Solution Architecture](#solution-architecture)
+  - [Model Implementations](#model-implementations)
+  - [Components](#components)
+  - [Training Framework](#training-framework)
+- [Results](#results)
+  - [Performance Overview](#performance-overview)
+  - [Training Comparison](#training-comparison)
+- [Project Usage](#project-usage)
+  - [Setup](#setup)
+  - [Configuration](#configuration)
+  - [Running Experiments](#running-experiments)
+- [Project Structure](#project-structure)
+- [Future Work](#future-work)
+
 ## Overview
-A neural network framework for detecting peaks in noisy signals, focusing on modularity and reproducibility.
-
-## Key Principles
-### 1. Experiment Pipeline
-- Central configuration via YAML
-- Structured output directory
-- Traceable models and training (simplified for this exercise)
-
-### 2. Component Architecture
-- Reusable building blocks
-- Easy to extend
-- Simple baseline to advanced implementations
-
-### 3. Experiment Monitoring
-- Loss & component visualizations
-- Early stopping with configurable patience
-- Curriculum parameter tracking:
-  - Learning rate progression
-  - Noise amplitude changes
-  - Loss weight adjustments
-
-### 4. Result Tracking
-- Metrics collection
-- Standardized visualizations
-- Cross-experiment comparison
-
-## Problem Analysis
-
-### Initial Challenge Decomposition
-- Signal characteristics vary significantly across samples:
-  - Peak widths: 10-40 samples 
-  - Amplitude ratios: 0.8->1.0 between peaks
-  - Inter-peak distance: Variable from 0.1-1.8 time units
-- Noise components:
-  - Complex multi-frequency interference
-  - Amplitude-varying distortions
-  - Non-uniform baseline drift
-
-## Solution Evolution
-
-### 1. Basic Feed-Forward Network
-Initial Approach:
-- Simple fully-connected architecture
-- Direct signal-to-position mapping
-- Minimal assumptions about signal structure
-
-Limitations:
-- No spatial hierarchy understanding
-- Sensitive to peak amplitude variations
-
-### 2. CNN with Attention
-Motivation:
-- Need for translation invariance
-- Multi-scale feature detection
-- Focus on relevant signal regions
-
-Design Evolution:
-- Added convolutional layers for spatial features
-- Incorporated attention mechanism
-
-Challenges:
-- Training instability with attention
-- Computational overhead
-- Complex hyperparameter tuning
-
-### 3. Physics-Informed Approach
-Integration Strategy:
-- Spectral domain constraints
-- Gradient-based peak properties
-- Signal ~physics priors
-
-Design Considerations:
-- Balance between data-driven and physics-based components
-- Integration of domain knowledge
-- Computational efficiency trade-offs
-
-Results:
-- Robust to unseen noise patterns
-- Faster convergence during training
-
-## Design Decisions
-
-### Modular Architecture
-Rationale:
-- Component isolation for testing
-- Easy experimentation with architectures
-- Reusable building blocks across models
-
-### Curriculum Learning Design
-Progression Strategy:
-- Start: Clean signals, well-separated peaks
-- Middle: Introduce gaussian noise, varying SNR
-- End: Complex noise, overlapping peaks
-
-Implementation:
-```python
-def noise_schedule(epoch):
-    return min(MAX_NOISE, BASE_NOISE * (1 + epoch/NOISE_RAMP_EPOCHS))
-```
-
-### Signal Generation
-Design Choices:
-- Parameterized peak shapes for variety
-- Physics-based noise models
-- Controlled difficulty progression
-
-Validation:
-- Statistical analysis of generated signals
-- Coverage of edge cases
-- Real-world signal comparison
-
-## Future Considerations
-
-### Scaling Strategy
-1. Performance Optimization
-   - ONNX runtime deployment
-   - Quantization-aware training
-   - Batch size optimization
-
-2. Architecture Extensions
-   - Multi-resolution processing
-   - Uncertainty estimation
-   - Online learning capabilities
-
-3. Known Limitations
-   - Peak overlap handling
-   - Extreme noise scenarios
-   - Computational complexity scaling
+A neural network framework for detecting peaks in noisy signals, focusing on modularity and reproducibility. The project implements three different approaches with increasing complexity, from a simple baseline to a physics-informed neural network.
 
 ## Problem Statement
 Given a signal with two peaks and noise, predict:
@@ -136,81 +26,71 @@ Given a signal with two peaks and noise, predict:
 - Midpoint between peaks
 - Second peak position
 
-## Architecture
+Key Challenges:
+- Variable signal characteristics (peak widths: 10-40 samples, amplitude ratios: 0.8-1.0)
+- Complex noise components (multi-frequency interference, amplitude variations)
+- Variable inter-peak distance (0.1-1.8 time units)
 
-### Models
-Three implementations with increasing complexity ([detailed documentation](model_architectures/)):
+## Solution Architecture
+
+The solution explores two key dimensions: architectural complexity and domain knowledge integration. While complexity scales from simple to sophisticated architectures, we also progress from pure data-driven approaches to physics-informed models that leverage signal processing priors.
+
+### Model Implementations
+Three approaches with increasing sophistication:
 
 1. **Basic Feed-Forward Network** ([docs](model_architectures/models/simplest_possible.md))
-   > Pure data-driven approach with minimal architecture
-   > - Simple fully-connected layers
-   > - No signal processing assumptions
-   > - Baseline performance benchmark
+   - Simple fully-connected architecture
+   - Direct signal-to-position mapping
+   - Pure data-driven approach with no signal priors
 
 2. **CNN with Attention** ([docs](model_architectures/models/attention_dilated_conv1d.md))
-   > Advanced architecture, still pure data-driven
-   > - Multi-scale CNN + attention mechanisms
-   > - Learns signal patterns from data
-   > - No explicit signal priors
+   - Multi-scale CNN + attention mechanisms
+   - Translation invariant feature learning
+   - Learns signal patterns from data without explicit priors
 
 3. **Physics-Informed Network** ([docs](model_architectures/models/pinn_peak_detector.md))
-   > Hybrid approach combining deep learning with signal processing
-   > - Noise filtering (high-pass filter)
-   > - FFT-based template matching with 32 templates
-   > - Residual architecture with gradient refinement
-   > - Guaranteed peak ordering
+   - High-pass noise filtering
+   - Template matching (made efficient via fft)
+   - Gradient-based refinement with signal processing priors
+   - Explicit midpoint calculation
+   - Guaranteed peak ordering through physics constraints
 
 ### Components
-Building blocks ([component docs](model_architectures/components/)):
+Reusable building blocks ([docs](model_architectures/components/)):
+- **CNN Blocks**: Multi-scale feature extraction
+- **Spectral Processing**: Frequency-domain analysis
+- **Peak Refinement**: Gradient-based position refinement
+- **Common Utilities**: Shared functionality
 
-- **CNN Blocks** ([docs](model_architectures/components/multi_scale_cnn.md))
-  > Multi-scale feature extraction
-- **Spectral Processing** ([docs](model_architectures/components/spectral_branch.md))
-  > Frequency-domain analysis
-- **Peak Refinement** ([docs](model_architectures/components/gradient_refinement.md))
-  > Gradient-based position refinement
-- **Common Utilities** ([docs](model_architectures/components/common.md))
-  > Shared functionality
+### Training Framework
+- **Loss Function**: Combines position accuracy, peak characteristics
+- **Curriculum Learning**:
+  - Noise amplitude progression
+  - Learning rate scheduling
+  - Component weight adjustments
 
-### Loss Function
-Combines ([source](src/losses/peak_loss.py)):
-- Position accuracy
-- Peak characteristics
-- Curriculum learning
+## Results
 
-### Curriculum Learning
-Configurable curriculum options ([config.yaml](config.yaml)):
-- Complex noise: Control noise amplitude progression
-- Learning rate: Scheduled learning rate decay
-- Loss weights: Adjustable component weight progression
-  - Position/magnitude weights
-  - Gradient constraints
-  - Second derivative terms
+### Performance Overview
 
-Current implementation uses static weights, but infrastructure supports dynamic curriculum learning.
+| Model | Parameters | Training Loss (1e-3) | Eval Loss (1e-3) |
+|-------|------------|---------------------|------------------|
+| PINN Peak Detector | 1.5M | 1.35 | 0.81 |
+| Attention Dilated Conv1D | 412K | 4.90 | 2.87 |
+| Simplest Possible | 131K | 5.21 | 6.23 |
 
-## Project Structure
-```
-.
-├── config.yaml           # Configuration
-├── pyproject.toml       # Dependencies
-├── multi_experiment_run/  # Multi-model experiment framework
-│   ├── multi_config.yaml # Experiment configurations
-│   └── run_experiments.py # Experiment runner
-├── best_model_results/   # Maintained experiment results
-│   ├── model_comparison.png  # Performance visualization
-│   └── {model_name}/    # Per-model results
-└── src/
-    ├── config/         
-    ├── models/          
-    │   └── components/  
-    ├── utils/           
-    └── train.py         
-```
 
-Results from experiments are maintained in `best_model_results/`, providing performance comparisons and detailed per-model metrics.
+Key Findings:
+- **PINN Peak Detector**: Best accuracy (0.81e-3) but highest complexity
+- **Attention Dilated Conv1D**: Strong middle ground (2.87e-3)
+- **Simplest Possible**: Competitive baseline (6.23e-3)
 
-## Usage
+### Training Comparison
+![Model Loss Comparison](best_model_results/model_comparison.png)
+
+Detailed results in [best_model_results](best_model_results/).
+
+## Project Usage
 
 ### Setup
 ```bash
@@ -219,15 +99,6 @@ source .venv/bin/activate
 pip install poetry
 poetry install
 pip install torch
-```
-
-### Running Experiments
-```bash
-# Single experiment
-python src/train.py
-
-# Multiple experiments
-python multi_experiment_run/run_experiments.py
 ```
 
 ### Configuration
@@ -239,21 +110,38 @@ training:
 signal:
   length: 2048
   sampling_rate: 1024
-
-# multi_config.yaml - Multiple experiments
-all experiments will inherit base_config parameters,
-then you can inject experimental ones for each
-base_config:
-  training:
-    batch_size: 256
-experiments:
-  - name: "baseline"
-    model:
-      name: "simplest_possible"
-  - name: "cnn_attention"
-    model:
-      name: "attention_dilated_conv1d"
 ```
+
+### Running Experiments
+```bash
+python src/train.py              # Single experiment
+python multi_experiment_run/run_experiments.py  # Multiple experiments
+```
+
+## Project Structure
+```
+.
+├── config.yaml           # Configuration
+├── pyproject.toml       # Dependencies
+├── multi_experiment_run/  # Multi-model experiment framework
+├── best_model_results/   # Experiment results
+└── src/
+    ├── config/         
+    ├── models/          
+    ├── utils/           
+    └── train.py         
+```
+
+## Future Work
+1. **Performance Optimization**
+   - ONNX runtime deployment
+   - Quantization-aware training
+   - Batch size optimization
+
+2. **Architecture Extensions**
+   - Multi-resolution processing
+   - Uncertainty estimation
+   - Online learning capabilities
 
 ## Requirements
 - Python 3.8+
