@@ -296,7 +296,7 @@ class TrainingMonitor:
                 
                 cumulative_values = new_cumulative
         
-        # Plot 3: Curriculum Components
+        # Plot 4: Curriculum Components
         if self.position_weights:  # Only if we have curriculum data
             # Map components to their weight data
             weight_data = [
@@ -315,10 +315,10 @@ class TrainingMonitor:
                         name=f'{name} Weight',
                         line=dict(color=line_color, width=2),  # Increased line width
                         showlegend=True,
-                        legendgroup="3",
+                        legendgroup="4",
                         legendgrouptitle_text="Curriculum Components"
                     ),
-                    row=3, col=1
+                    row=4, col=1
                 )
             
             # Add learning rate with distinct style
@@ -334,9 +334,9 @@ class TrainingMonitor:
                             dash='dashdot'  # Changed to dashdot for better visibility
                         ),
                         showlegend=True,
-                        legendgroup="3"
+                        legendgroup="4"
                     ),
-                    row=3, col=1
+                    row=4, col=1
                 )
             
             # Add noise amplitude with distinct style
@@ -352,12 +352,12 @@ class TrainingMonitor:
                             dash='dot'
                         ),
                         showlegend=True,
-                        legendgroup="3"
+                        legendgroup="4"
                     ),
-                    row=3, col=1
+                    row=4, col=1
                 )
             
-            # Plot 4: Scatter plot of outputs vs targets
+            # Plot 3: Scatter plot of outputs vs targets
             if self.recent_outputs is not None and self.recent_targets is not None:
                 # Extract peak1, midpoint, peak2 from outputs and targets
                 peak1_out, midpoint_out, peak2_out = self.recent_outputs[:, 0], self.recent_outputs[:, 1], self.recent_outputs[:, 2]
@@ -372,9 +372,9 @@ class TrainingMonitor:
                         name='Peak 1',
                         marker=dict(color='blue', size=8),
                         showlegend=True,
-                        legendgroup="4"
+                        legendgroup="3"
                     ),
-                    row=4, col=1
+                    row=3, col=1
                 )
                 
                 fig.add_trace(
@@ -385,9 +385,9 @@ class TrainingMonitor:
                         name='Midpoint',
                         marker=dict(color='red', size=8),
                         showlegend=True,
-                        legendgroup="4"
+                        legendgroup="3"
                     ),
-                    row=4, col=1
+                    row=3, col=1
                 )
                 
                 fig.add_trace(
@@ -398,9 +398,9 @@ class TrainingMonitor:
                         name='Peak 2',
                         marker=dict(color='green', size=8),
                         showlegend=True,
-                        legendgroup="4"
+                        legendgroup="3"
                     ),
-                    row=4, col=1
+                    row=3, col=1
                 )
         
         # Update layout
@@ -445,7 +445,7 @@ class TrainingMonitor:
         # Update y-axes to log scale for curriculum weights only with better tick formatting
         fig.update_yaxes(
             type="log",
-            row=3,
+            row=4,
             col=1,
             tickformat=".0e",  # Scientific notation
             dtick=1,  # Log tick spacing
@@ -458,10 +458,10 @@ class TrainingMonitor:
         fig.update_xaxes(title_text="Target Position", range=[0., 1.], row=4, col=1)
         
         # Update y-axes labels
-        fig.update_yaxes(title_text="Loss", row=1, col=1)
-        fig.update_yaxes(title_text="Component Loss", row=2, col=1)
-        fig.update_yaxes(title_text="Value", row=3, col=1)
-        fig.update_yaxes(title_text="Predicted Position", range=[0., 1.], row=4, col=1)
+        fig.update_yaxes(title_text="Loss", type="log", row=1, col=1)
+        fig.update_yaxes(title_text="Component Loss", type="log", row=2, col=1)
+        fig.update_yaxes(title_text="Value", row=4, col=1)
+        fig.update_yaxes(title_text="Predicted Position", range=[0., 1.], row=3, col=1)
         
         fig.write_image(str(self.save_dir / filename))
     
